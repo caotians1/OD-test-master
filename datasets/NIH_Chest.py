@@ -12,9 +12,9 @@ CLASSES = ['Effusion', 'Emphysema', 'Pneumonia', 'Cardiomegaly', 'Pneumothorax',
            'Nodule', 'Consolidation', 'Atelectasis', 'Edema', 'Fibrosis', 'Hernia', 'Pleural_Thickening']
 N_CLASS = len(CLASSES)
 
-class NIH_ChestBase(data.Dataset):
+class NIHChestBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images", imsize=256):
-        super(NIH_ChestBase,self).__init__()
+        super(NIHChestBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
         self.split = split
@@ -22,21 +22,22 @@ class NIH_ChestBase(data.Dataset):
         self.index_file = index_file
         self.image_dir = image_dir
         self.imsize = imsize
-        self.transforms = transforms.Compose([transforms.Grayscale,
+        self.transforms = transforms.Compose([transforms.Grayscale(),
                                               transforms.Resize((self.imsize, self.imsize)),
                                               transforms.ToTensor()])
         assert split in ["train", "val", "test"]
 
         if not osp.exists(osp.join(self.index_cache_path, self.cache_file)):
             self.generate_index()
+        cache_file = torch.load(osp.join(self.index_cache_path, self.cache_file))
+        self.img_list = cache_file['img_list']
+        self.label_tensors = cache_file['label_tensors']
 
         if not (osp.exists(osp.join(self.source_dir, 'val_split.pt'))
                 and osp.exists(osp.join(self.source_dir, 'train_split.pt'))
                 and osp.exists(osp.join(self.source_dir, 'test_split.pt'))):
             self.generate_split()
-        cache_file = torch.load(osp.join(self.index_cache_path, self.cache_file))
-        self.img_list = cache_file['img_list']
-        self.label_tensors = cache_file['label_tensors']
+
         self.split_inds = torch.load(osp.join(self.index_cache_path, "%s_split.pt"% self.split))
 
     def __len__(self):
@@ -61,15 +62,29 @@ class NIH_ChestBase(data.Dataset):
         train_inds = []
         val_inds = []
         test_inds = []
+        missing_train = 0
+        missing_val = 0
+        missing_test = 0
         for entry in lines[:train_num]:
-            train_inds.append(self.img_list.index(entry))
+            try:
+                train_inds.append(self.img_list.index(entry.strip("\n")))
+            except ValueError:
+                missing_train += 1
         for entry in lines[train_num:]:
-            val_inds.append(self.img_list.index(entry))
+            try:
+                val_inds.append(self.img_list.index(entry.strip("\n")))
+            except ValueError:
+                missing_val += 1
 
         with open(osp.join(self.source_dir, 'test_list.txt'), 'r+') as fp:
             lines = fp.readlines()
         for entry in lines:
-            test_inds.append(self.img_list.index(entry))
+            try:
+                test_inds.append(self.img_list.index(entry.strip("\n")))
+            except ValueError:
+                missing_test += 1
+        print("%i, %i,and %i found in original split file; %i, %i, and %i missing" %
+              (train_num, n_trainval - train_num, len(lines), missing_train, missing_val, missing_test))
 
         torch.save(train_inds, osp.join(self.index_cache_path, "train_split.pt"))
         torch.save(val_inds, osp.join(self.index_cache_path, "val_split.pt"))
@@ -83,12 +98,12 @@ class NIH_ChestBase(data.Dataset):
         """
         img_list = []
         label_list = []
-        with open(osp.join(self.source_dir, self.index_file), 'r+') as fp:
+        with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
             csvf = csv.DictReader(fp)
             for row in csvf:
-                imp = osp.join(self.source_dir, self.image_dir, row['Image_Index'])
+                imp = osp.join(self.source_dir, self.image_dir, row['Image Index'])
                 if osp.exists(imp):
-                    img_list.append(row['Image_Index'])
+                    img_list.append(row['Image Index'])
                     findings = row['Finding Labels'].split('|')
                     label = [1 if cond in findings else 0 for cond in CLASSES]
                     label_list.append(label)
@@ -98,52 +113,57 @@ class NIH_ChestBase(data.Dataset):
                    osp.join(self.index_cache_path, self.cache_file))
         return
 
-class NIH_Chest(AbstractDomainInterface):
+class NIHChest(AbstractDomainInterface):
     """
-    based on requirements, data loader need "leave-one-out" function
+    Wrapper for using all classes of NIHChest as train or test dataset
     """
-
     def __init__(self):
-        super(NIH_Chest, self).__init__()
+        super(NIHChest, self).__init__()
+        cache_path = "E:\ChestXray-NIHCC"
+        source_path = "E:\ChestXray-NIHCC"
+        self.ds_train = NIHChestBase(cache_path, source_path, "train")
+        self.ds_valid = NIHChestBase(cache_path, source_path, "val")
+        self.ds_test = NIHChestBase(cache_path, source_path, "test")
+        train_indices = torch.randperm(len(self.ds_train))
+        self.D1_train_ind = train_indices.int()
+        self.D1_valid_ind = torch.arange(0, len(self.ds_valid)).int()
+        self.D1_test_ind = torch.arange(0, len(self.ds_test)).int()
 
-        im_transformer = transforms.Compose([transforms.ToTensor()])
-        root_path = './workspace/datasets/mnist'
-        self.D1_train_ind = torch.arange(0, 50000).int()
-        self.D1_valid_ind = torch.arange(50000, 60000).int()
-        self.D1_test_ind = torch.arange(0, 10000).int()
-
-        self.D2_valid_ind = torch.arange(0, 60000).int()
-        self.D2_test_ind = torch.arange(0, 10000).int()
-
-        self.ds_train = datasets.MNIST(root_path,
-                                       train=True,
-                                       transform=im_transformer,
-                                       download=True)
-        self.ds_test = datasets.MNIST(root_path,
-                                      train=False,
-                                      transform=im_transformer,
-                                      download=True)
+        self.D2_valid_ind = train_indices.int()
+        self.D2_test_ind = torch.arange(0, len(self.ds_valid)).int()
+        self.image_size = (256, 256)
 
     def get_D1_train(self):
         return SubDataset(self.name, self.ds_train, self.D1_train_ind)
-
     def get_D1_valid(self):
-        return SubDataset(self.name, self.ds_train, self.D1_valid_ind, label=0)
-
+        return SubDataset(self.name, self.ds_valid, self.D1_valid_ind, label=0)
     def get_D1_test(self):
         return SubDataset(self.name, self.ds_test, self.D1_test_ind, label=0)
 
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.ds_train, self.D2_valid_ind, label=1, transform=D1.conformity_transform())
+        target_indices = self.D2_valid_ind
+        return SubDataset(self.name, self.ds_train, target_indices, label=1, transform=D1.conformity_transform())
 
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
-        return SubDataset(self.name, self.ds_test, self.D2_test_ind, label=1, transform=D1.conformity_transform())
+        target_indices = self.D2_test_ind
+        return SubDataset(self.name, self.ds_valid, target_indices, label=1, transform=D1.conformity_transform())
 
     def conformity_transform(self):
         return transforms.Compose([transforms.ToPILImage(),
-                                   transforms.Resize((28, 28)),
                                    transforms.Grayscale(),
+                                   transforms.Resize((256, 256)),
                                    transforms.ToTensor()
                                    ])
+
+if __name__ == "__main__":
+    dataset = NIHChest()
+    d1_train = dataset.get_D1_train()
+    print(len(d1_train))
+    loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
+    import matplotlib.pyplot as plt
+    for batch, batch_ind in zip(loader, range(10)):
+        print(batch_ind)
+        x, y = batch
+        plt.imshow(x.numpy().reshape(dataset.image_size))
