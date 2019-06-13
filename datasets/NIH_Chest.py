@@ -167,3 +167,13 @@ if __name__ == "__main__":
         print(batch_ind)
         x, y = batch
         plt.imshow(x.numpy().reshape(dataset.image_size))
+
+    d2_valid = dataset.get_D2_valid(dataset)
+    print(len(d2_valid))
+    loader = data.DataLoader(d2_valid, batch_size=1, shuffle=True)
+    import matplotlib.pyplot as plt
+
+    for batch, batch_ind in zip(loader, range(10)):
+        print(batch_ind)
+        x, y = batch
+        plt.imshow(x.numpy().reshape(dataset.image_size))

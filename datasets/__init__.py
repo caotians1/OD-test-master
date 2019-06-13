@@ -126,13 +126,16 @@ class AbstractDomainInterface(object):
         D2 is the other half of the same dataset.
     """
     def is_compatible(self, D1):
-        import global_vars as Global
-        
-        if Global.d2_compatiblity.has_key(self.name):
-            return D1.name in Global.d2_compatiblity[self.name]
-        else:
-            raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+        try:
+            import global_vars as Global
 
+            if Global.d2_compatiblity.has_key(self.name):
+                return D1.name in Global.d2_compatiblity[self.name]
+            else:
+                raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+        except ModuleNotFoundError:
+            print("Something went wrong trying to load all modules. Assuming debugging modules")
+            return True
     """
         Returns an image transformer that can convert other (compatible) datasets
         to this datasets for conformity in evaluation.
