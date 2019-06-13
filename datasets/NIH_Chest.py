@@ -8,17 +8,18 @@ import csv
 import subprocess
 from PIL import Image
 
-CLASSES = ['Effusion', 'Emphysema', 'Pneumonia', 'Cardiomegaly', 'Pneumothorax', 'Mass', 'Infiltration', 'No_Finding',
+CLASSES = ['Effusion', 'Emphysema', 'Pneumonia', 'Cardiomegaly', 'Pneumothorax', 'Mass', 'Infiltration', 'No Finding',
            'Nodule', 'Consolidation', 'Atelectasis', 'Edema', 'Fibrosis', 'Hernia', 'Pleural_Thickening']
 N_CLASS = len(CLASSES)
 
 class NIHChestBase(data.Dataset):
-    def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images", imsize=256):
+    def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images",
+                 imsize=256):
         super(NIHChestBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
         self.split = split
-        self.cache_file = "NIH_Proc.pkl"
+        self.cache_file = "NIHChestIndex.pkl"
         self.index_file = index_file
         self.image_dir = image_dir
         self.imsize = imsize
@@ -52,6 +53,30 @@ class NIHChestBase(data.Dataset):
             with Image.open(f) as img:
                 img = self.transforms(img)
         return img, label
+
+    def generate_index(self):
+        """
+        Scan index file to create list of images and labels for each image. Also stores index files in index_cache_path
+        :return:
+        """
+        img_list = []
+        label_list = []
+        with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
+            csvf = csv.DictReader(fp)
+            for row in csvf:
+                imp = osp.join(self.source_dir, self.image_dir, row['Image Index'])
+                if osp.exists(imp):
+                    img_list.append(row['Image Index'])
+                    findings = row['Finding Labels'].split('|')
+                    label = [1 if cond in findings else 0 for cond in CLASSES]
+                    if not any(label):
+                        print(findings)
+                    label_list.append(label)
+        label_tensors = torch.IntTensor(label_list)
+        os.makedirs(self.index_cache_path, exist_ok=True)
+        torch.save({'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list},
+                   osp.join(self.index_cache_path, self.cache_file))
+        return
 
     def generate_split(self):
         with open(osp.join(self.source_dir, 'train_val_list.txt'), 'r+') as fp:
@@ -91,47 +116,57 @@ class NIHChestBase(data.Dataset):
         torch.save(test_inds, osp.join(self.index_cache_path, "test_split.pt"))
         return
 
-    def generate_index(self):
-        """
-        Scan index file to create list of images and labels for each image. Also stores index files in index_cache_path
-        :return:
-        """
-        img_list = []
-        label_list = []
-        with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
-            csvf = csv.DictReader(fp)
-            for row in csvf:
-                imp = osp.join(self.source_dir, self.image_dir, row['Image Index'])
-                if osp.exists(imp):
-                    img_list.append(row['Image Index'])
-                    findings = row['Finding Labels'].split('|')
-                    label = [1 if cond in findings else 0 for cond in CLASSES]
-                    label_list.append(label)
-        label_tensors = torch.IntTensor(label_list)
-        os.makedirs(self.index_cache_path, exist_ok=True)
-        torch.save({'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list},
-                   osp.join(self.index_cache_path, self.cache_file))
-        return
 
 class NIHChest(AbstractDomainInterface):
-    """
-    Wrapper for using all classes of NIHChest as train or test dataset
-    """
-    def __init__(self):
+    def __init__(self, leave_out_classes=(), keep_in_classes=None):
+        """
+        :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
+        :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
+         is removed from indices..
+        """
         super(NIHChest, self).__init__()
+        self.leave_out_classes = leave_out_classes
+        self.keep_in_classes = keep_in_classes
         cache_path = "E:\ChestXray-NIHCC"
         source_path = "E:\ChestXray-NIHCC"
         self.ds_train = NIHChestBase(cache_path, source_path, "train")
         self.ds_valid = NIHChestBase(cache_path, source_path, "val")
         self.ds_test = NIHChestBase(cache_path, source_path, "test")
-        train_indices = torch.randperm(len(self.ds_train))
-        self.D1_train_ind = train_indices.int()
-        self.D1_valid_ind = torch.arange(0, len(self.ds_valid)).int()
-        self.D1_test_ind = torch.arange(0, len(self.ds_test)).int()
 
-        self.D2_valid_ind = train_indices.int()
-        self.D2_test_ind = torch.arange(0, len(self.ds_valid)).int()
+        self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
+        self.D1_valid_ind = self.get_filtered_inds(self.ds_valid)
+        self.D1_test_ind = self.get_filtered_inds(self.ds_test)
+
+        self.D2_valid_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
+        self.D2_test_ind = self.get_filtered_inds(self.ds_test)
         self.image_size = (256, 256)
+
+    def get_filtered_inds(self, basedata: NIHChestBase, shuffle=False):
+        if not (self.leave_out_classes == () and self.keep_in_classes == None):
+            leave_out_mask_label = torch.zeros(N_CLASS).int()
+            for cla in self.leave_out_classes:
+                ii = CLASSES.index(cla)
+                leave_out_mask_label[ii] = 1
+            if self.keep_in_classes is None:
+                keep_in_mask_label = torch.ones(N_CLASS).int()
+            else:
+                keep_in_mask_label = torch.zeros(N_CLASS).int()
+                for cla in self.keep_in_classes:
+                    ii = CLASSES.index(cla)
+                    keep_in_mask_label[ii] = 1
+            keep_inds = []
+            for seq_ind, base_ind in enumerate(basedata.split_inds):
+                label = basedata.label_tensors[base_ind]
+                if torch.sum(label * leave_out_mask_label) == 0 and torch.sum(label * keep_in_mask_label) > 0:
+                    keep_inds.append(seq_ind)
+                else:
+                    pass
+            output_inds = torch.Tensor(keep_inds).int()
+        else:
+            output_inds = torch.arange(0, len(basedata)).int()
+        if shuffle:
+            output_inds = output_inds[torch.randperm(len(output_inds))]
+        return output_inds
 
     def get_D1_train(self):
         return SubDataset(self.name, self.ds_train, self.D1_train_ind)
@@ -148,7 +183,7 @@ class NIHChest(AbstractDomainInterface):
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
         target_indices = self.D2_test_ind
-        return SubDataset(self.name, self.ds_valid, target_indices, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
 
     def conformity_transform(self):
         return transforms.Compose([transforms.ToPILImage(),
@@ -171,9 +206,47 @@ if __name__ == "__main__":
     d2_valid = dataset.get_D2_valid(dataset)
     print(len(d2_valid))
     loader = data.DataLoader(d2_valid, batch_size=1, shuffle=True)
-    import matplotlib.pyplot as plt
-
     for batch, batch_ind in zip(loader, range(10)):
         print(batch_ind)
         x, y = batch
         plt.imshow(x.numpy().reshape(dataset.image_size))
+
+    Noeffusion = NIHChest(leave_out_classes=['Effusion'])
+    d1_train = Noeffusion.get_D1_train()
+    print(len(d1_train))
+    loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
+    for batch, batch_ind in zip(loader, range(100)):
+        x, y = batch
+        #print(y)
+        pr_str = ""
+        for i, cla in enumerate(CLASSES):
+            if y[0][i] == 1:
+                pr_str += cla + "|"
+        print(pr_str)
+
+    Keepeffusion = NIHChest(keep_in_classes=['Effusion'])
+    d1_train = Keepeffusion.get_D1_train()
+    print(len(d1_train))
+    loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
+    for batch, batch_ind in zip(loader, range(100)):
+        x, y = batch
+        # print(y)
+        pr_str = ""
+        for i, cla in enumerate(CLASSES):
+            if y[0][i] == 1:
+                pr_str += cla + "|"
+        print(pr_str)
+
+    NoFibrosisKeepEdemaEffusion = NIHChest(leave_out_classes=['Fibrosis'], keep_in_classes=['Edema', 'Effusion'])
+    d1_train = NoFibrosisKeepEdemaEffusion.get_D1_train()
+    print(len(d1_train))
+    loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
+    for batch, batch_ind in zip(loader, range(100)):
+        x, y = batch
+        # print(y)
+        pr_str = ""
+        for i, cla in enumerate(CLASSES):
+            if y[0][i] == 1:
+                pr_str += cla + "|"
+        print(pr_str)
+    pass
