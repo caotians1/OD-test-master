@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import torchvision.models.vgg as VGG
 import torchvision.models.resnet as Resnet
+import torchvision.models.densenet as Densenet
 
 class MNIST_VGG(nn.Module):
     """
@@ -440,5 +441,52 @@ class TinyImagenet_Resnet(nn.Module):
         config = {}
         config['optim']     = optim.Adam(self.parameters(), lr=1e-3)
         config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-2, min_lr=1e-6, factor=0.1, verbose=True)
+        config['max_epoch'] = 120
+        return config
+
+
+class NIHDense(nn.Module):
+    def __init__(self):
+        super(NIHDense, self).__init__()
+        self.model = Densenet.DenseNet(num_classes=14)
+        #TODO: ChestXNet specific implementation params (substitute for kLog)
+
+    def forward(self, x, softmax=True):
+        output = self.model(x)
+        if softmax:
+            return F.log_softmax(output, dim=1)
+        else:
+            return output
+
+    def output_size(self):
+        return torch.LongTensor([1, 14])
+
+    def train_config(self):
+        config = {}
+        # TODO: chestXnet suitable arguments
+        config['optim'] = optim.Adam(self.parameters(), lr=1e-3)
+        config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-2,
+                                                                   min_lr=1e-6, factor=0.1, verbose=True)
+        config['max_epoch'] = 120
+        return config
+
+
+class NIHDenseBinary(NIHDense):
+    def __init__(self):
+        super(NIHDenseBinary, self).__init__()
+        feature_dim = self.model.classifier.in_features
+        self.load_state_dict(torch.load("somewhere"))
+        self.model.classifier = nn.Linear(feature_dim, 2)
+
+
+    def output_size(self):
+        return torch.LongTensor([1,2])
+
+    def train_config(self):
+        config = {}
+        # just train the classifier.
+        config['optim']     = optim.Adam(self.model.classifier.parameters(), lr=1e-2)
+        config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-2,
+                                                                   min_lr=1e-6, factor=0.1, verbose=True)
         config['max_epoch'] = 120
         return config
