@@ -1,7 +1,7 @@
 from __future__ import print_function
 
 import os
-assert 'VIRTUAL_ENV' in os.environ, 'Please activate the environment first.'
+#assert 'VIRTUAL_ENV' in os.environ, 'Please activate the environment first.'
 
 import random
 import socket

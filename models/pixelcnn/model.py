@@ -1,8 +1,8 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-from layers import * 
-from utils import * 
+from .layers import *
+from .utils import *
 import numpy as np
 
 class PixelCNNLayer_up(nn.Module):

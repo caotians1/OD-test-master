@@ -62,7 +62,7 @@ ds_cache = {}
 
 for m in [d1_tasks, d2_tasks, d3_tasks]:
     for d in m:
-        if not ds_cache.has_key(d):
+        if not d in ds_cache:
             ds_cache[d] = Global.all_datasets[d]()
 
 results = []

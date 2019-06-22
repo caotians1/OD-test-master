@@ -161,7 +161,7 @@ class IterativeTrainer(object):
 
                 if backward and not stochastic:
                     optimizer.step()
-        except IOError, e:
+        except IOError as e:
             if e.errno != errno.EINTR:
                 raise
             else:
