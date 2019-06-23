@@ -60,7 +60,7 @@ def get_classifier_config(args, model, dataset):
     
     if hasattr(model, 'train_config'):
         model_train_config = model.train_config()
-        for key, value in model_train_config.iteritems():
+        for key, value in model_train_config.items():
             print('Overriding config.%s'%key)
             config.__setattr__(key, value)
 
@@ -101,7 +101,7 @@ def train_classifier(args, model, dataset):
                 config.logger.visualize_average('LRs', trainer.visdom)
 
             test_average_acc = config.logger.get_measure('test_accuracy').mean_epoch()
-
+            print("Test Accuracy", test_average_acc)
             # Save the logger for future reference.
             torch.save(config.logger.measures, os.path.join(home_path, 'logger.pth'))
 

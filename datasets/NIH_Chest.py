@@ -1,7 +1,7 @@
 import torch
 import torchvision.transforms as transforms
 import torch.utils.data as data
-from datasets import SubDataset, AbstractDomainInterface
+from datasets import SubDataset, AbstractDomainInterface, ExpandRGBChannels
 import os
 import os.path as osp
 import csv
@@ -12,9 +12,16 @@ CLASSES = ['Effusion', 'Emphysema', 'Pneumonia', 'Cardiomegaly', 'Pneumothorax',
            'Nodule', 'Consolidation', 'Atelectasis', 'Edema', 'Fibrosis', 'Hernia', 'Pleural_Thickening']
 N_CLASS = len(CLASSES)
 
+def to_tensor(crops):
+    return torch.stack([transforms.ToTensor()(crop) for crop in crops])
+
+def group_normalize(crops):
+    return torch.stack([transforms.Normalize([0.485, 0.456, 0.406],
+                                      [0.229, 0.224, 0.225])(crop) for crop in crops])
+
 class NIHChestBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images",
-                 imsize=256):
+                 imsize=224, binary=False):
         super(NIHChestBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
@@ -23,8 +30,9 @@ class NIHChestBase(data.Dataset):
         self.index_file = index_file
         self.image_dir = image_dir
         self.imsize = imsize
-        self.transforms = transforms.Compose([transforms.Grayscale(),
-                                              transforms.Resize((self.imsize, self.imsize)),
+        self.binary = binary
+        self.transforms = transforms.Compose([transforms.Resize((256, 256)),
+                                              transforms.RandomCrop((imsize,imsize)),
                                               transforms.ToTensor()])
         assert split in ["train", "val", "test"]
 
@@ -48,9 +56,11 @@ class NIHChestBase(data.Dataset):
         index = self.split_inds[item]
         img_name = self.img_list[index]
         label = self.label_tensors[index]
+        if self.binary:
+            label = label[7]
         imp = osp.join(self.source_dir, self.image_dir, img_name)
         with open(imp, 'rb') as f:
-            with Image.open(f) as img:
+            with Image.open(f).convert('RGB') as img:
                 img = self.transforms(img)
         return img, label
 
@@ -72,7 +82,7 @@ class NIHChestBase(data.Dataset):
                     if not any(label):
                         print(findings)
                     label_list.append(label)
-        label_tensors = torch.IntTensor(label_list)
+        label_tensors = torch.LongTensor(label_list)
         os.makedirs(self.index_cache_path, exist_ok=True)
         torch.save({'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list},
                    osp.join(self.index_cache_path, self.cache_file))
@@ -118,7 +128,7 @@ class NIHChestBase(data.Dataset):
 
 
 class NIHChest(AbstractDomainInterface):
-    def __init__(self, leave_out_classes=(), keep_in_classes=None):
+    def __init__(self, leave_out_classes=(), keep_in_classes=None, binary=False):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
@@ -127,11 +137,12 @@ class NIHChest(AbstractDomainInterface):
         super(NIHChest, self).__init__()
         self.leave_out_classes = leave_out_classes
         self.keep_in_classes = keep_in_classes
+        self.binary = binary
         cache_path = "E:\ChestXray-NIHCC"
         source_path = "E:\ChestXray-NIHCC"
-        self.ds_train = NIHChestBase(cache_path, source_path, "train")
-        self.ds_valid = NIHChestBase(cache_path, source_path, "val")
-        self.ds_test = NIHChestBase(cache_path, source_path, "test")
+        self.ds_train = NIHChestBase(cache_path, source_path, "train", binary=self.binary)
+        self.ds_valid = NIHChestBase(cache_path, source_path, "val", binary=self.binary)
+        self.ds_test = NIHChestBase(cache_path, source_path, "test", binary=self.binary)
 
         self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
         self.D1_valid_ind = self.get_filtered_inds(self.ds_valid)
@@ -139,7 +150,7 @@ class NIHChest(AbstractDomainInterface):
 
         self.D2_valid_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
         self.D2_test_ind = self.get_filtered_inds(self.ds_test)
-        self.image_size = (256, 256)
+        self.image_size = (224, 224)
 
     def get_filtered_inds(self, basedata: NIHChestBase, shuffle=False):
         if not (self.leave_out_classes == () and self.keep_in_classes == None):
@@ -186,9 +197,10 @@ class NIHChest(AbstractDomainInterface):
         return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
 
     def conformity_transform(self):
-        return transforms.Compose([transforms.ToPILImage(),
-                                   transforms.Grayscale(),
-                                   transforms.Resize((256, 256)),
+        return transforms.Compose([ExpandRGBChannels(),
+                                    transforms.ToPILImage(),
+                                   #transforms.Grayscale(),
+                                   transforms.Resize((224, 224)),
                                    transforms.ToTensor()
                                    ])
 

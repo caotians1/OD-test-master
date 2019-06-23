@@ -448,11 +448,11 @@ class TinyImagenet_Resnet(nn.Module):
 class NIHDense(nn.Module):
     def __init__(self):
         super(NIHDense, self).__init__()
-        self.model = Densenet.DenseNet(num_classes=14)
+        self.densenet121 = Densenet.densenet121(pretrained=True)
         #TODO: ChestXNet specific implementation params (substitute for kLog)
 
     def forward(self, x, softmax=True):
-        output = self.model(x)
+        output = self.densenet121(x)
         if softmax:
             return F.log_softmax(output, dim=1)
         else:
@@ -471,13 +471,36 @@ class NIHDense(nn.Module):
         return config
 
 
-class NIHDenseBinary(NIHDense):
+class NIHDenseBinary(nn.Module):
     def __init__(self, pretrained_weights_path=None):
         super(NIHDenseBinary, self).__init__()
-        feature_dim = self.model.classifier.in_features
+        self.densenet121 = Densenet.densenet121(pretrained=True)
+
         if pretrained_weights_path is not None:
-            self.load_state_dict(torch.load(pretrained_weights_path))
-        self.model.classifier = nn.Linear(feature_dim, 2)
+            state_dict = torch.load(pretrained_weights_path)
+            keys = state_dict['state_dict'].copy().keys()
+            for key in keys:
+                if "norm.1" in key:
+                    state_dict['state_dict'][key[7:].replace("norm.1", "norm1")] = state_dict['state_dict'].pop(key)
+                elif "norm.2" in key:
+                    state_dict['state_dict'][key[7:].replace("norm.2", "norm2")] = state_dict['state_dict'].pop(key)
+                elif "conv.1" in key:
+                    state_dict['state_dict'][key[7:].replace("conv.1", "conv1")] = state_dict['state_dict'].pop(key)
+                elif "conv.2" in key:
+                    state_dict['state_dict'][key[7:].replace("conv.2", "conv2")] = state_dict['state_dict'].pop(key)
+                else:
+                    state_dict['state_dict'][key[7:]] = state_dict['state_dict'].pop(key)
+
+            self.load_state_dict(state_dict['state_dict'], strict=False)
+        feature_dim = self.densenet121.classifier.in_features
+        self.densenet121.classifier = nn.Linear(feature_dim, 2)
+
+    def forward(self, x, softmax=True):
+        output = self.densenet121(x)
+        if softmax:
+            return F.log_softmax(output, dim=1)
+        else:
+            return output
 
     def output_size(self):
         return torch.LongTensor([1,2])
@@ -485,8 +508,7 @@ class NIHDenseBinary(NIHDense):
     def train_config(self):
         config = {}
         # just train the classifier.
-        config['optim']     = optim.Adam(self.model.classifier.parameters(), lr=1e-2)
-        config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-2,
-                                                                   min_lr=1e-6, factor=0.1, verbose=True)
-        config['max_epoch'] = 120
+        config['optim']     = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
+        config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 1, gamma=0.1)
+        config['max_epoch'] = 20
         return config
