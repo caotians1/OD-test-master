@@ -33,8 +33,8 @@ class KWayLogisticWrapper(nn.Module):
 class KWayLogisticLoss(nn.Module):
     def __init__(self):
         super(KWayLogisticLoss, self).__init__()
-        self.size_average = True
-        self.loss = nn.BCEWithLogitsLoss(size_average=True)
+        self.reduction = "mean"
+        self.loss = nn.BCEWithLogitsLoss()
         
     def forward(self, input, target):
         n_classes = input.size(1)

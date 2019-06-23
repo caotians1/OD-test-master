@@ -13,12 +13,13 @@ import datasets.CIFAR as CIFAR
 import datasets.noise as noise
 import datasets.STL as STL
 import datasets.TinyImagenet as TI
+import datasets.NIH_Chest as NC
 
 all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         CIFAR.CIFAR10, CIFAR.CIFAR100,
                         STL.STL10, TI.TinyImagenet,
                         noise.UniformNoise, noise.NormalNoise,
-                        STL.STL10d32, TI.TinyImagenetd32]
+                        STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest]
 
 """
     Not all the datasets can be used as a Dv, Dt (aka D2) for each dataset.
@@ -35,6 +36,7 @@ d2_compatiblity = {
     'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'],
     'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32'],
     'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32'],
+    'NIHChest'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32']
     # STL10 is not compatible with CIFAR10 because of the 9-overlapping classes.
     # Erring on the side of caution.
 }
@@ -42,7 +44,7 @@ d2_compatiblity = {
 # We can augment the following training data with mirroring.
 # We make sure there's no information leak in-between tasks.
 mirror_augment = {
-    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'
+    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChest'
 }
 
 """
@@ -149,22 +151,22 @@ for dscls in all_dataset_classes:
     all_datasets[dscls.__name__] = dscls
 
 def get_ref_classifier(dataset):
-    if dataset_reference_classifiers.has_key(dataset):
+    if dataset in dataset_reference_classifiers:
         return dataset_reference_classifiers[dataset]
     raise NotImplementedError()
 
 def get_ref_autoencoder(dataset):
-    if dataset_reference_autoencoders.has_key(dataset):
+    if dataset in dataset_reference_autoencoders:
         return dataset_reference_autoencoders[dataset]
     raise NotImplementedError()
 
 def get_ref_vae(dataset):
-    if dataset_reference_vaes.has_key(dataset):
+    if dataset in dataset_reference_vaes:
         return dataset_reference_vaes[dataset]
     raise NotImplementedError()
 
 def get_ref_pixelcnn(dataset):
-    if dataset_reference_pcnns.has_key(dataset):
+    if dataset in dataset_reference_pcnns:
         return dataset_reference_pcnns[dataset]
     raise NotImplementedError()
 

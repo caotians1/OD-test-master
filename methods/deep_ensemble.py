@@ -45,8 +45,8 @@ class DeepEnsembleLoss(nn.Module):
         assert ensemble_network.__class__ == DeepEnsembleWrapper, 'Only EnsembleWrappers are accepted.'
         self.ensemble_network = ensemble_network
         self.epsilon = epsilon
-        self.size_average = True
-        self.loss = nn.NLLLoss(size_average=self.size_average)
+        self.reduction = "mean"
+        self.loss = nn.NLLLoss(reduction=self.reduction)
         
     def forward(self, input, target):
         """
@@ -242,7 +242,7 @@ class DeepEnsemble(ProbabilityThreshold):
 
         base_model_name = self.base_model.preferred_name()
 
-        config.name = '_%s[%s](%s->%s)'%(self.__class__.__name__, base_model_name, self.args.D1, self.args.D2)
+        config.name = '_%s[%s](%s-%s)'%(self.__class__.__name__, base_model_name, self.args.D1, self.args.D2)
         config.train_loader = train_loader
         config.valid_loader = valid_loader
         config.phases = {

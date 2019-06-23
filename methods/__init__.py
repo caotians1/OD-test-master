@@ -94,7 +94,7 @@ class SVMLoss(nn.Module):
     def __init__(self, margin=1.0):
         super(SVMLoss, self).__init__()
         self.margin = margin
-        self.size_average = True
+        self.reduction = "mean"
     
     def forward(self, x, target):
         target = target.clone()
@@ -102,11 +102,12 @@ class SVMLoss(nn.Module):
         target.data[target.data<0.1]=-1
         error = self.margin-x*target
         loss = torch.clamp(error, min=0)
-        if self.size_average:
-            loss = loss.mean()
+        if self.reduction == "mean":
+            return loss.mean()
+        elif self.reduction == "sum":
+            return loss.sum()
         else:
-            loss = loss.sum()
-        return loss
+            return loss
 
 def get_cached(model, dataset_loader, device):
     from tqdm import tqdm

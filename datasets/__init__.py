@@ -129,7 +129,7 @@ class AbstractDomainInterface(object):
         try:
             import global_vars as Global
 
-            if Global.d2_compatiblity.has_key(self.name):
+            if self.name in Global.d2_compatiblity:
                 return D1.name in Global.d2_compatiblity[self.name]
             else:
                 raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))

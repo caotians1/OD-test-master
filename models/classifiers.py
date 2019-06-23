@@ -472,12 +472,12 @@ class NIHDense(nn.Module):
 
 
 class NIHDenseBinary(NIHDense):
-    def __init__(self):
+    def __init__(self, pretrained_weights_path=None):
         super(NIHDenseBinary, self).__init__()
         feature_dim = self.model.classifier.in_features
-        self.load_state_dict(torch.load("somewhere"))
+        if pretrained_weights_path is not None:
+            self.load_state_dict(torch.load(pretrained_weights_path))
         self.model.classifier = nn.Linear(feature_dim, 2)
-
 
     def output_size(self):
         return torch.LongTensor([1,2])

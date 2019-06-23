@@ -196,7 +196,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         
         h_path = path.join(self.args.experiment_path, '%s'%(self.__class__.__name__),
                                                       '%d'%(self.default_model),
-                                                      '%s->%s.pth'%(self.args.D1, self.args.D2))
+                                                      '%s-%s.pth'%(self.args.D1, self.args.D2))
         h_parent = path.dirname(h_path)
         if not path.isdir(h_parent):
             os.makedirs(h_parent)
@@ -241,7 +241,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
                 test_average_acc = h_config.logger.get_measure('test_accuracy').mean_epoch()
 
                 # Save the logger for future reference.
-                torch.save(h_config.logger.measures, path.join(h_parent, 'logger.%s->%s.pth'%(self.args.D1, self.args.D2)))
+                torch.save(h_config.logger.measures, path.join(h_parent, 'logger.%s-%s.pth'%(self.args.D1, self.args.D2)))
 
                 if best_accuracy < test_average_acc:
                     print('Updating the on file model with %s'%(colored('%.4f'%test_average_acc, 'red')))

@@ -29,7 +29,7 @@ class IterativeTrainer(object):
             'visualize': True,
             'sigmoid_viz': True,
         }
-        for key, value in defaults.iteritems():
+        for key, value in defaults.items():
             if not hasattr(self.config, key):
                 print(colored('Setting default value %s to %s'%(key, value), 'red'))
                 setattr(self.config, key, value)
@@ -115,14 +115,14 @@ class IterativeTrainer(object):
                             optimizer.step()
                         else:
                             nscaler = loss_scaler
-                            if criterion.size_average:
+                            if criterion.reduction == "mean":
                                 nscaler = nscaler * len(input)
                             loss2 = loss * nscaler
                             loss2.backward()
 
                     # Compute various measure. Can be safely skipped.
                     if not backward or not stochastic:
-                        if criterion.size_average:
+                        if criterion.reduction == "mean":
                             loss.data.mul_(len(input))
                     logger.log('%s_loss'%phase_name, loss.item(), epoch, i)
                     message = '%s Batch loss %.3f'%(phase_name, loss.item())

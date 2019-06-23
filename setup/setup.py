@@ -1,7 +1,17 @@
 import os
 import socket
 import sys
-import virtualenv
+#import virtualenv
+
+def execfile(filepath, globals=None, locals=None):
+    if globals is None:
+        globals = {}
+    globals.update({
+        "__file__": filepath,
+        "__name__": "__main__",
+    })
+    with open(filepath, 'rb') as file:
+        exec(compile(file.read(), filepath, 'exec'), globals, locals)
 
 # Setup information.
 workspace_name = 'workspace'
@@ -32,31 +42,31 @@ def setup_workspace():
         os.makedirs(workspace_path)
 
     # Create the virtual environment if it does not exist.
-    env_path = os.path.join(workspace_path, env_name)
-    if not os.path.isdir(env_path):
-        print('Creating environment: {}'.format(env_path))
-        virtualenv.create_environment(home_dir=env_path, site_packages=False)
-
-    # Activate the environment.
-    print('Activating virtual environment.')
-    activate_script = os.path.join(env_path, 'bin', 'activate_this.py')
-    execfile(activate_script, dict(__file__=activate_script))
-    if hasattr(sys, 'real_prefix'):
-        print('Activation done.')
-    else:
-        print('Activation failed!')
-
-    # Install the requirements.
-    # Since using the pip API is not working, we are just running bash commands
-    # through Python's os library.
-    commands = [
-            'python -m pip install --upgrade pip',
-            'pip install --upgrade -r {}'.format(requirements)
-            ]
-    print('Installing requirements.')
-    for command in commands:
-        os.system(command)
-    print('Installed requirements.')
+    # env_path = os.path.join(workspace_path, env_name)
+    # if not os.path.isdir(env_path):
+    #     print('Creating environment: {}'.format(env_path))
+    #     virtualenv.create_environment(home_dir=env_path, site_packages=False)
+    #
+    # # Activate the environment.
+    # print('Activating virtual environment.')
+    # activate_script = os.path.join(env_path, 'bin', 'activate_this.py')
+    # execfile(activate_script, dict(__file__=activate_script))
+    # if hasattr(sys, 'real_prefix'):
+    #     print('Activation done.')
+    # else:
+    #     print('Activation failed!')
+    #
+    # # Install the requirements.
+    # # Since using the pip API is not working, we are just running bash commands
+    # # through Python's os library.
+    # commands = [
+    #         'python -m pip install --upgrade pip',
+    #         'pip install --upgrade -r {}'.format(requirements)
+    #         ]
+    # print('Installing requirements.')
+    # for command in commands:
+    #     os.system(command)
+    # print('Installed requirements.')
 
     # Set up symlinks and project folders.
     from termcolor import colored
