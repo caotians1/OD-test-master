@@ -11,7 +11,7 @@ from PIL import Image
 CLASSES = ['Effusion', 'Emphysema', 'Pneumonia', 'Cardiomegaly', 'Pneumothorax', 'Mass', 'Infiltration', 'No Finding',
            'Nodule', 'Consolidation', 'Atelectasis', 'Edema', 'Fibrosis', 'Hernia', 'Pleural_Thickening']
 N_CLASS = len(CLASSES)
-
+MAX_LENGTH = 10000
 def to_tensor(crops):
     return torch.stack([transforms.ToTensor()(crop) for crop in crops])
 
@@ -145,15 +145,15 @@ class NIHChest(AbstractDomainInterface):
         self.ds_test = NIHChestBase(cache_path, source_path, "test", binary=self.binary)
 
         self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
-        self.D1_valid_ind = self.get_filtered_inds(self.ds_valid)
-        self.D1_test_ind = self.get_filtered_inds(self.ds_test)
+        self.D1_valid_ind = self.get_filtered_inds(self.ds_valid, shuffle=True)
+        self.D1_test_ind = self.get_filtered_inds(self.ds_test, shuffle=True)
 
         self.D2_valid_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
         self.D2_test_ind = self.get_filtered_inds(self.ds_test)
         self.image_size = (224, 224)
 
     def get_filtered_inds(self, basedata: NIHChestBase, shuffle=False):
-        if not (self.leave_out_classes == () and self.keep_in_classes == None):
+        if not (self.leave_out_classes == () and self.keep_in_classes is None):
             leave_out_mask_label = torch.zeros(N_CLASS).int()
             for cla in self.leave_out_classes:
                 ii = CLASSES.index(cla)
@@ -177,6 +177,8 @@ class NIHChest(AbstractDomainInterface):
             output_inds = torch.arange(0, len(basedata)).int()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
+            if len(output_inds) > MAX_LENGTH:
+                output_inds = output_inds[:MAX_LENGTH]
         return output_inds
 
     def get_D1_train(self):
@@ -203,6 +205,11 @@ class NIHChest(AbstractDomainInterface):
                                    transforms.Resize((224, 224)),
                                    transforms.ToTensor()
                                    ])
+
+class NIHChestBinary(NIHChest):
+    def __init__(self):
+        super(NIHChestBinary, self).__init__(binary=True)
+        return
 
 if __name__ == "__main__":
     dataset = NIHChest()

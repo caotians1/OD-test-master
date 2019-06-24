@@ -134,7 +134,11 @@ class ODIN(ProbabilityThreshold):
             x_center = trainX[trainY==0].mean()
             y_center = trainX[trainY==1].mean()
             init_value = (x_center+y_center)/2
-            model.H.threshold.fill_(init_value)
+            if model.H.threshold.device.type == "cpu":
+                model.H.threshold.data = init_value.view((1,))
+            else:
+                model.H.threshold.data = init_value.cuda().view((1,))
+            #model.H.threshold.fill_(init_value)
             print("Initializing threshold to %.2f"%(init_value.item()))
 
             new_valid_ds = TensorDataset(validX, validY)
@@ -153,7 +157,7 @@ class ODIN(ProbabilityThreshold):
         if hasattr(self.base_model, 'preferred_name'):
             base_model_name = self.base_model.preferred_name()
 
-        config.name = '_%s[%s](%s->%s)'%(self.__class__.__name__, base_model_name, self.args.D1, self.args.D2)
+        config.name = '_%s[%s](%s-%s)'%(self.__class__.__name__, base_model_name, self.args.D1, self.args.D2)
         config.train_loader = train_loader
         config.valid_loader = valid_loader
         config.phases = {
@@ -188,14 +192,14 @@ class ODIN(ProbabilityThreshold):
             train_ds = new_train_ds
 
         # As suggested by the authors.
-        all_temperatures = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-        all_epsilons     = torch.linspace(0, 0.004, 21)
+        all_temperatures = [1, 10, 100]#[1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        all_epsilons     = torch.linspace(0, 0.004, 3)#torch.linspace(0, 0.004, 21)
         total_params = len(all_temperatures) * len(all_epsilons)
         best_accuracy = -1
 
         h_path = path.join(self.args.experiment_path, '%s'%(self.__class__.__name__),
                                                       '%d'%(self.default_model),
-                                                      '%s->%s.pth'%(self.args.D1, self.args.D2))
+                                                      '%s-%s.pth'%(self.args.D1, self.args.D2))
         h_parent = path.dirname(h_path)
         if not path.isdir(h_parent):
             os.makedirs(h_parent)
@@ -263,7 +267,11 @@ class ODIN(ProbabilityThreshold):
 
         # Load the best model.
         print(colored('Loading H model from %s'%h_path, 'red'))
-        h_config.model.H.load_state_dict(torch.load(h_path))
+        state_dict = torch.load(h_path)
+        for key, val in state_dict.items():
+            if val.shape == torch.Size([]):
+                state_dict[key] = val.view((1,))
+        h_config.model.H.load_state_dict(state_dict)
         h_config.model.set_eval_direct(False)        
         print('Temperature %s Epsilon %s'%(colored(h_config.model.H.temperature.item(),'red'), colored(h_config.model.H.epsilon.item(), 'red')))
 

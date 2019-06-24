@@ -104,9 +104,9 @@ class ProbabilityThreshold(AbstractMethodInterface):
             print(colored('Loading H1 model from %s'%best_h_path, 'red'))
             config.model.load_state_dict(torch.load(best_h_path))
         
-        trainer.run_epoch(0, phase='all')
-        test_average_acc = config.logger.get_measure('all_accuracy').mean_epoch(epoch=0)
-        print("All average accuracy %s"%colored('%.4f%%'%(test_average_acc*100), 'red'))
+        #trainer.run_epoch(0, phase='all')
+        #test_average_acc = config.logger.get_measure('all_accuracy').mean_epoch(epoch=0)
+        #print("All average accuracy %s"%colored('%.4f%%'%(test_average_acc*100), 'red'))
 
         self.base_model = config.model
         self.base_model.eval()

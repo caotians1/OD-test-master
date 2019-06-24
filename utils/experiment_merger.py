@@ -51,7 +51,7 @@ for exp_id in exp_list:
                 sys.exit(1)
             else:
                 results.append(r)
-                if method_count.has_key(r[0]):
+                if r[0] in method_count:
                     method_count[r[0]] += 1
                 else:
                     method_count[r[0]] = 1
@@ -69,7 +69,7 @@ else:
 print('Saving results to %s'%output_folder)
 
 total = 0
-for method, count in method_count.iteritems():
+for method, count in method_count.items():
     print ('%25s\t%-5s'%(method, colored('%d'%count, 'green')))
     total += count
 print('%s'%colored('-'*37, 'red'))

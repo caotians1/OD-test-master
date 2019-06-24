@@ -40,7 +40,7 @@ class IterativeTrainer(object):
         dataset     = config['dataset']
         backward    = config['backward']
         phase_name  = phase
-        print("Doing %s"%colored(phase, 'green'))
+        #print("Doing %s"%colored(phase, 'green'))
 
         model       = self.config.model
         visualize   = self.config.visualize
