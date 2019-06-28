@@ -1,7 +1,9 @@
 import torch
+import os
 import torchvision.transforms as transforms
 from datasets import SubDataset, AbstractDomainInterface, ExpandRGBChannels
 from torchvision import datasets
+
 
 class STL10(AbstractDomainInterface):
     """
@@ -9,8 +11,8 @@ class STL10(AbstractDomainInterface):
         D1:    5,000 train + (4,000 valid + 4,000 test)
         D2:    5,000 valid + 8,000 test.
     """
-
-    def __init__(self, downsample=None):
+    name="stl10"
+    def __init__(self, downsample=None, root_path='./workspace/datasets/stl10', **kwargs):
         super(STL10, self).__init__()
 
         im_transformer = None
@@ -19,7 +21,6 @@ class STL10(AbstractDomainInterface):
             im_transformer  = transforms.Compose([transforms.ToTensor()])
         else:
             im_transformer  = transforms.Compose([transforms.Resize((self.downsample, self.downsample)), transforms.ToTensor()])
-        root_path       = './workspace/datasets/stl10'
         self.D1_train_ind = torch.arange(0, 5000).int()
         self.D1_valid_ind = torch.arange(0, 4000).int()
         self.D1_test_ind  = torch.arange(4000, 8000).int()
@@ -63,5 +64,5 @@ class STL10(AbstractDomainInterface):
         return out_transform
 
 class STL10d32(STL10):
-    def __init__(self):
-        super(STL10d32, self).__init__(downsample=32)
+    def __init__(self, root_path='./workspace/datasets/stl10', **kwargs):
+        super(STL10d32, self).__init__(root_path, downsample=32, **kwargs)

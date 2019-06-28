@@ -128,7 +128,8 @@ class NIHChestBase(data.Dataset):
 
 
 class NIHChest(AbstractDomainInterface):
-    def __init__(self, leave_out_classes=(), keep_in_classes=None, binary=False):
+    name = "NIHCC"
+    def __init__(self, root_path="E:/", leave_out_classes=(), keep_in_classes=None, binary=False, **kwargs):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
@@ -138,8 +139,8 @@ class NIHChest(AbstractDomainInterface):
         self.leave_out_classes = leave_out_classes
         self.keep_in_classes = keep_in_classes
         self.binary = binary
-        cache_path = "E:\ChestXray-NIHCC"
-        source_path = "E:\ChestXray-NIHCC"
+        cache_path = os.path.join(root_path, "NIHCC")
+        source_path = os.path.join(root_path, "NIHCC")
         self.ds_train = NIHChestBase(cache_path, source_path, "train", binary=self.binary)
         self.ds_valid = NIHChestBase(cache_path, source_path, "val", binary=self.binary)
         self.ds_test = NIHChestBase(cache_path, source_path, "test", binary=self.binary)

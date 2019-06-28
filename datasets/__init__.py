@@ -10,6 +10,7 @@ import torchvision.transforms as transforms
  Therefore we implement our own wrapper around the existing datasets
  to ensure consistency across evaluations.
 """
+
 class SubDataset(data.Dataset):
     """
         SubDataset facilitates
@@ -92,7 +93,7 @@ class AbstractDomainInterface(object):
         All the datasets used in this project must implement this interface.
         P.S: I really hate the way python handles inheritence and abstractions.
     """
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.name = self.__class__.__name__
 
     """

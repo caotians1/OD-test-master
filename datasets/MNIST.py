@@ -9,12 +9,11 @@ class MNIST(AbstractDomainInterface):
         Ds: (50,000 train + 10,000 valid) + (10,000 test)
         Dv, Dt: 60,000 valid + 10,000 test.
     """
-
-    def __init__(self):
+    name = "mnist"
+    def __init__(self, root_path='./workspace/datasets/mnist', **kwargs):
         super(MNIST, self).__init__()
 
         im_transformer  = transforms.Compose([transforms.ToTensor()])
-        root_path       = './workspace/datasets/mnist'
         self.D1_train_ind = torch.arange(0, 50000).int()
         self.D1_valid_ind = torch.arange(50000, 60000).int()
         self.D1_test_ind  = torch.arange(0, 10000).int()

@@ -10,12 +10,11 @@ class FashionMNIST(AbstractDomainInterface):
         D1: (50,000 train + 10,000 valid) + (10,000 test)
         D2: 60,000 valid + 10,000 test.
     """
-
-    def __init__(self):
+    name = "fmnist"
+    def __init__(self, root_path='./workspace/datasets/fmnist', **kwargs):
         super(FashionMNIST, self).__init__()
 
         im_transformer  = transforms.Compose([transforms.ToTensor()])
-        root_path       = './workspace/datasets/fmnist'
         self.D1_train_ind = torch.arange(0, 50000).int()
         self.D1_valid_ind = torch.arange(50000, 60000).int()
         self.D1_test_ind  = torch.arange(0, 10000).int()

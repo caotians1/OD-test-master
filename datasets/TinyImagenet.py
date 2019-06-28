@@ -74,6 +74,7 @@ def default_loader(path):
     else:
         return pil_loader(path)
 
+
 class TinyImagenetParent(data.Dataset):
     """`TinyImagenet <https://tiny-imagenet.herokuapp.com/>`_ Dataset.
 
@@ -95,7 +96,7 @@ class TinyImagenetParent(data.Dataset):
     processed_folder = 'processed'
     training_file = 'index.pt'
 
-    def __init__(self, root, split='train', transform=None, target_transform=None, download=False):
+    def __init__(self, root, split='train', transform=None, target_transform=None, download=False, extract=False):
         assert split in ['train', 'test', 'valid']
 
         self.root = os.path.expanduser(root)
@@ -103,10 +104,12 @@ class TinyImagenetParent(data.Dataset):
         self.target_transform = target_transform
         self.split = split  # train, test or valid
 
+        self.file_path = None
         if download:
             self.download()
-
-        if not self._check_exists():
+        if extract:
+            self.extract()
+        if not self._check_exists_proc():
             raise RuntimeError('Dataset not found.' +
                                ' You can use download=True to download it')
         
@@ -144,7 +147,10 @@ class TinyImagenetParent(data.Dataset):
     def __len__(self):
         return len(self.index[self.key])
 
-    def _check_exists(self):
+    def _check_exists_raw(self):
+        return os.path.exists(os.path.join(self.root, self.raw_folder, 'tiny-imagenet-200.zip'))
+
+    def _check_exists_proc(self):
         return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file))
 
     def download(self):
@@ -152,7 +158,7 @@ class TinyImagenetParent(data.Dataset):
         from six.moves import urllib
         import gzip
 
-        if self._check_exists():
+        if self._check_exists_raw():
             return
 
         # download files
@@ -173,13 +179,20 @@ class TinyImagenetParent(data.Dataset):
                 file_path = os.path.join(self.root, self.raw_folder, filename)
                 with open(file_path, 'wb') as f:
                     f.write(data.read())
+        return
+
+    def extract(self):
+        if self._check_exists_proc():
+            return
+        filename = self.urls[0].rpartition('/')[2]
+        file_path = os.path.join(self.root, self.raw_folder, filename)
         extract_path = os.path.join(self.root, self.raw_folder)
         output_path = os.path.join(extract_path, 'tiny-imagenet-200')
         if not os.path.isdir(output_path):
             import zipfile
             with zipfile.ZipFile(file_path, 'r') as z:
                 z.extractall(extract_path)
-        
+
         index_path = os.path.join(self.root, self.processed_folder, self.training_file)
 
         if not os.path.exists(index_path):
@@ -194,9 +207,10 @@ class TinyImagenetParent(data.Dataset):
                 for row in f:
                     row = row.split('\t')
                     valid_set.append((os.path.join(output_path, 'val', 'images', row[0]), class_to_idx[row[1]]))
-            test_set = make_dataset(os.path.join(output_path, 'test'), {'images':-1})
+            test_set = make_dataset(os.path.join(output_path, 'test'), {'images': -1})
 
-            torch.save({'class_to_index': class_to_idx, 'train': train_set, 'valid': valid_set, 'test': test_set}, index_path)
+            torch.save({'class_to_index': class_to_idx, 'train': train_set, 'valid': valid_set, 'test': test_set},
+                       index_path)
             print('Done!')
 
 def filter_indices(dataset, indices, filter_label):
@@ -214,8 +228,8 @@ class TinyImagenet(AbstractDomainInterface):
         D1: 100,000 train (shuffled), 10,000 valid, 10,000 test.
         D2: 10,000 Valid + 100,000 train (shuffled), 10,000 Test.
     """
-
-    def __init__(self, downsample=None):
+    name="tinyimagenet"
+    def __init__(self, root_path='./workspace/datasets/tinyimagenet', downsample=None, download=True, extract=True):
         super(TinyImagenet, self).__init__()
         
         im_transformer = None
@@ -224,19 +238,21 @@ class TinyImagenet(AbstractDomainInterface):
             im_transformer  = transforms.Compose([transforms.ToTensor()])
         else:
             im_transformer  = transforms.Compose([transforms.Resize((self.downsample, self.downsample)), transforms.ToTensor()])
-        root_path       = './workspace/datasets/tinyimagenet'
         self.ds_train   = TinyImagenetParent(root_path,
                                             split='train',
                                             transform=im_transformer,
-                                            download=True)
+                                            download=download,
+                                             extract=extract)
         self.ds_valid   = TinyImagenetParent(root_path,
                                             split='valid',
                                             transform=im_transformer,
-                                            download=True)
+                                             download=download,
+                                             extract=extract)
         self.ds_test    = TinyImagenetParent(root_path,
                                             split='test',
                                             transform=im_transformer,
-                                            download=True)
+                                            download=download,
+                                            extract=extract)
 
         index_file = os.path.join('./datasets/permutation_files/', 'tinyimagenet.pth')
         train_indices = None
@@ -303,5 +319,5 @@ class TinyImagenet(AbstractDomainInterface):
         return out_transform
 
 class TinyImagenetd32(TinyImagenet):
-    def __init__(self):
-        super(TinyImagenetd32, self).__init__(downsample=32)
+    def __init__(self, **kwargs):
+        super(TinyImagenetd32, self).__init__(downsample=32, **kwargs)

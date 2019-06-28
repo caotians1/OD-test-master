@@ -137,12 +137,12 @@ class NotMNIST(AbstractDomainInterface):
         D1: not defined.
         D2: 9362 Valid, 9362 Test. (indices chosen at random)
     """
-
-    def __init__(self):
+    name="notmnist"
+    def __init__(self, root_path='./workspace/datasets/notmnist', **kwargs):
         super(NotMNIST, self).__init__()
         
         im_transformer  = transforms.Compose([transforms.ToTensor()])
-        root_path       = './workspace/datasets/notmnist'
+        #root_path       = './workspace/datasets/notmnist'
         self.ds_train   = NotMNISTParent(root_path,
                                          train=True,
                                          transform=im_transformer,
