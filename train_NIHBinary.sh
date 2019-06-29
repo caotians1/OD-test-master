@@ -22,5 +22,5 @@ done
 
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
-ln -s $SLURM_TMPDIR/data workspace/datasets
+ln -sf $SLURM_TMPDIR/data workspace/datasets
 python setup/NIHTrain_binary.py
