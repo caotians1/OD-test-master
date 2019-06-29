@@ -146,7 +146,7 @@ class NotMNIST(AbstractDomainInterface):
         self.ds_train   = NotMNISTParent(root_path,
                                          train=True,
                                          transform=im_transformer,
-                                         download=True)
+                                         download=kwargs['download'])
 
         index_file = os.path.join('./datasets/permutation_files/', 'notmnist.pth')
         all_indices = None

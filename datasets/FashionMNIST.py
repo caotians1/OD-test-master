@@ -25,11 +25,11 @@ class FashionMNIST(AbstractDomainInterface):
         self.ds_train   = datasets.FashionMNIST(root_path,
                                         train=True,
                                         transform=im_transformer,
-                                        download=True)
+                                        download=kwargs['download'])
         self.ds_test    = datasets.FashionMNIST(root_path,
                                         train=False,
                                         transform=im_transformer,
-                                        download=True)
+                                        download=kwargs['download'])
     
     def get_D1_train(self):
         return SubDataset(self.name, self.ds_train, self.D1_train_ind)

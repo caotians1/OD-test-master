@@ -11,7 +11,7 @@ from PIL import Image
 CLASSES = ['Effusion', 'Emphysema', 'Pneumonia', 'Cardiomegaly', 'Pneumothorax', 'Mass', 'Infiltration', 'No Finding',
            'Nodule', 'Consolidation', 'Atelectasis', 'Edema', 'Fibrosis', 'Hernia', 'Pleural_Thickening']
 N_CLASS = len(CLASSES)
-MAX_LENGTH = 10000
+MAX_LENGTH = 1000000
 def to_tensor(crops):
     return torch.stack([transforms.ToTensor()(crop) for crop in crops])
 
@@ -69,21 +69,21 @@ class NIHChestBase(data.Dataset):
         if os.path.exists(os.path.join(self.source_dir, self.image_dir)):
             return
         import tarfile
-        tarsplits_list = ["images_001.tar",
-                     "images_002.tar.gz",
-                     "images_003.tar.gz",
-                     "images_004.tar.gz",
-                     "images_005.tar.gz",
-                     "images_006.tar.gz",
-                     "images_007.tar.gz",
-                     "images_008.tar.gz",
-                     "images_009.tar.gz",
-                     "images_010.tar.gz",
-                     "images_011.tar.gz",
-                     "images_012.tar.gz",
+        tarsplits_list = ["images_01.tar.gz",
+                     "images_02.tar.gz",
+                     "images_03.tar.gz",
+                     "images_04.tar.gz",
+                     "images_05.tar.gz",
+                     "images_06.tar.gz",
+                     "images_07.tar.gz",
+                     "images_08.tar.gz",
+                     "images_09.tar.gz",
+                     "images_10.tar.gz",
+                     "images_11.tar.gz",
+                     "images_12.tar.gz",
                      ]
         for tar_split in tarsplits_list:
-            with tarfile.open(tar_split) as tar:
+            with tarfile.open(os.path.join(self.source_dir, tar_split)) as tar:
                 tar.extractall()
 
 
@@ -152,7 +152,7 @@ class NIHChestBase(data.Dataset):
 
 class NIHChest(AbstractDomainInterface):
     name = "NIHCC"
-    def __init__(self, root_path="E:/", leave_out_classes=(), keep_in_classes=None, binary=False, download=True, extract=True):
+    def __init__(self, root_path="./workspace/datasets/NIHCC", leave_out_classes=(), keep_in_classes=None, binary=False, download=False, extract=True):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
@@ -162,8 +162,8 @@ class NIHChest(AbstractDomainInterface):
         self.leave_out_classes = leave_out_classes
         self.keep_in_classes = keep_in_classes
         self.binary = binary
-        cache_path = os.path.join(root_path, "NIHCC")
-        source_path = os.path.join(root_path, "NIHCC")
+        cache_path = root_path
+        source_path = root_path
         self.ds_train = NIHChestBase(cache_path, source_path, "train", binary=self.binary, download=download, extract=extract)
         self.ds_valid = NIHChestBase(cache_path, source_path, "val", binary=self.binary, download=download, extract=extract)
         self.ds_test = NIHChestBase(cache_path, source_path, "test", binary=self.binary, download=download, extract=extract)
