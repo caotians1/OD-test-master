@@ -36,6 +36,7 @@ class NIHChestBase(data.Dataset):
                                               transforms.ToTensor()])
         assert split in ["train", "val", "test"]
         if extract:
+            self.extract()
             if not osp.exists(osp.join(self.index_cache_path, self.cache_file)):
                 self.generate_index()
             cache_file = torch.load(osp.join(self.index_cache_path, self.cache_file))
@@ -63,6 +64,28 @@ class NIHChestBase(data.Dataset):
             with Image.open(f).convert('RGB') as img:
                 img = self.transforms(img)
         return img, label
+
+    def extract(self):
+        if os.path.exists(os.path.join(self.source_dir, self.image_dir)):
+            return
+        import tarfile
+        tarsplits_list = ["images_001.tar",
+                     "images_002.tar.gz",
+                     "images_003.tar.gz",
+                     "images_004.tar.gz",
+                     "images_005.tar.gz",
+                     "images_006.tar.gz",
+                     "images_007.tar.gz",
+                     "images_008.tar.gz",
+                     "images_009.tar.gz",
+                     "images_010.tar.gz",
+                     "images_011.tar.gz",
+                     "images_012.tar.gz",
+                     ]
+        for tar_split in tarsplits_list:
+            with tarfile.open(tar_split) as tar:
+                tar.extractall()
+
 
     def generate_index(self):
         """
