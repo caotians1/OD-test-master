@@ -21,7 +21,7 @@ def group_normalize(crops):
 
 class NIHChestBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images",
-                 imsize=224, binary=False):
+                 imsize=224, binary=False, download=False, extract=True):
         super(NIHChestBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
@@ -35,19 +35,19 @@ class NIHChestBase(data.Dataset):
                                               transforms.RandomCrop((imsize,imsize)),
                                               transforms.ToTensor()])
         assert split in ["train", "val", "test"]
+        if extract:
+            if not osp.exists(osp.join(self.index_cache_path, self.cache_file)):
+                self.generate_index()
+            cache_file = torch.load(osp.join(self.index_cache_path, self.cache_file))
+            self.img_list = cache_file['img_list']
+            self.label_tensors = cache_file['label_tensors']
 
-        if not osp.exists(osp.join(self.index_cache_path, self.cache_file)):
-            self.generate_index()
-        cache_file = torch.load(osp.join(self.index_cache_path, self.cache_file))
-        self.img_list = cache_file['img_list']
-        self.label_tensors = cache_file['label_tensors']
+            if not (osp.exists(osp.join(self.source_dir, 'val_split.pt'))
+                    and osp.exists(osp.join(self.source_dir, 'train_split.pt'))
+                    and osp.exists(osp.join(self.source_dir, 'test_split.pt'))):
+                self.generate_split()
 
-        if not (osp.exists(osp.join(self.source_dir, 'val_split.pt'))
-                and osp.exists(osp.join(self.source_dir, 'train_split.pt'))
-                and osp.exists(osp.join(self.source_dir, 'test_split.pt'))):
-            self.generate_split()
-
-        self.split_inds = torch.load(osp.join(self.index_cache_path, "%s_split.pt"% self.split))
+            self.split_inds = torch.load(osp.join(self.index_cache_path, "%s_split.pt"% self.split))
 
     def __len__(self):
         return len(self.split_inds)
@@ -129,7 +129,7 @@ class NIHChestBase(data.Dataset):
 
 class NIHChest(AbstractDomainInterface):
     name = "NIHCC"
-    def __init__(self, root_path="E:/", leave_out_classes=(), keep_in_classes=None, binary=False, **kwargs):
+    def __init__(self, root_path="E:/", leave_out_classes=(), keep_in_classes=None, binary=False, download=True, extract=True):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
@@ -141,17 +141,17 @@ class NIHChest(AbstractDomainInterface):
         self.binary = binary
         cache_path = os.path.join(root_path, "NIHCC")
         source_path = os.path.join(root_path, "NIHCC")
-        self.ds_train = NIHChestBase(cache_path, source_path, "train", binary=self.binary)
-        self.ds_valid = NIHChestBase(cache_path, source_path, "val", binary=self.binary)
-        self.ds_test = NIHChestBase(cache_path, source_path, "test", binary=self.binary)
+        self.ds_train = NIHChestBase(cache_path, source_path, "train", binary=self.binary, download=download, extract=extract)
+        self.ds_valid = NIHChestBase(cache_path, source_path, "val", binary=self.binary, download=download, extract=extract)
+        self.ds_test = NIHChestBase(cache_path, source_path, "test", binary=self.binary, download=download, extract=extract)
+        if extract:
+            self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
+            self.D1_valid_ind = self.get_filtered_inds(self.ds_valid, shuffle=True)
+            self.D1_test_ind = self.get_filtered_inds(self.ds_test, shuffle=True)
 
-        self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
-        self.D1_valid_ind = self.get_filtered_inds(self.ds_valid, shuffle=True)
-        self.D1_test_ind = self.get_filtered_inds(self.ds_test, shuffle=True)
-
-        self.D2_valid_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
-        self.D2_test_ind = self.get_filtered_inds(self.ds_test)
-        self.image_size = (224, 224)
+            self.D2_valid_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
+            self.D2_test_ind = self.get_filtered_inds(self.ds_test)
+            self.image_size = (224, 224)
 
     def get_filtered_inds(self, basedata: NIHChestBase, shuffle=False):
         if not (self.leave_out_classes == () and self.keep_in_classes is None):

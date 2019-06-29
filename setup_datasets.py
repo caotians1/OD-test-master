@@ -14,7 +14,7 @@ STORAGE_PATH = "~/projects/rpp-bengioy/caotians"
 CACHE_PATH = os.path.join(os.environ.get("SLURM_TMPDIR"), "data")
 
 if __name__ == "__main__":
-    assert os.path.exists(STORAGE_PATH)
+    assert os.path.exists(os.path.expanduser(STORAGE_PATH))
 
     for dataset in Global.all_dataset_classes:
         if 'name' in dataset.__dict__:

@@ -109,12 +109,12 @@ class TinyImagenetParent(data.Dataset):
             self.download()
         if extract:
             self.extract()
-        if not self._check_exists_proc():
-            raise RuntimeError('Dataset not found.' +
-                               ' You can use download=True to download it')
+            if not self._check_exists_proc():
+                raise RuntimeError('Dataset not found.' +
+                                   ' You can use download=True to download it')
         
-        self.index = torch.load(os.path.join(self.root, self.processed_folder, self.training_file))
-        self.key = split
+            self.index = torch.load(os.path.join(self.root, self.processed_folder, self.training_file))
+            self.key = split
 
         # if self.train:
         #     self.train_data, self.train_labels = torch.load(
@@ -253,22 +253,22 @@ class TinyImagenet(AbstractDomainInterface):
                                             transform=im_transformer,
                                             download=download,
                                             extract=extract)
+        if extract:
+            index_file = os.path.join('./datasets/permutation_files/', 'tinyimagenet.pth')
+            train_indices = None
+            if os.path.isfile(index_file):
+                train_indices = torch.load(index_file)
+            else:
+                print(colored('GENERATING PERMUTATION FOR <TinyImagenet train>', 'red'))
+                train_indices = torch.randperm(len(self.ds_train))
+                torch.save(train_indices, index_file)
 
-        index_file = os.path.join('./datasets/permutation_files/', 'tinyimagenet.pth')
-        train_indices = None
-        if os.path.isfile(index_file):
-            train_indices = torch.load(index_file)
-        else:
-            print(colored('GENERATING PERMUTATION FOR <TinyImagenet train>', 'red'))
-            train_indices = torch.randperm(len(self.ds_train))
-            torch.save(train_indices, index_file)
+            self.D1_train_ind = train_indices.int()
+            self.D1_valid_ind = torch.arange(0, len(self.ds_valid)).int()
+            self.D1_test_ind  = torch.arange(0, len(self.ds_test)).int()
 
-        self.D1_train_ind = train_indices.int()
-        self.D1_valid_ind = torch.arange(0, len(self.ds_valid)).int()
-        self.D1_test_ind  = torch.arange(0, len(self.ds_test)).int()
-
-        self.D2_valid_ind = train_indices.int()
-        self.D2_test_ind  = torch.arange(0, len(self.ds_valid)).int()
+            self.D2_valid_ind = train_indices.int()
+            self.D2_test_ind  = torch.arange(0, len(self.ds_valid)).int()
 
         """
         CIFAR100:
