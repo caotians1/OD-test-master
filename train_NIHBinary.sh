@@ -23,4 +23,4 @@ done
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/NIHTrain_binary.py --root_path="workspace/datasets-%s"%$SLURM_JOBID --exp="nihbinaryfull" --batch-size=64 --no-visualize --save --workers=6
+python setup/NIHTrain_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp="nihbinaryfull" --batch-size=64 --no-visualize --save --workers=6
