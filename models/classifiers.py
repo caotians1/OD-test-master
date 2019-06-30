@@ -472,10 +472,10 @@ class NIHDense(nn.Module):
 
 
 class NIHDenseBinary(nn.Module):
-    def __init__(self, pretrained_weights_path=None):
+    def __init__(self, pretrained_weights_path=None, train_features=False):
         super(NIHDenseBinary, self).__init__()
+        self.train_features = train_features
         self.densenet121 = Densenet.densenet121(pretrained=False)
-
         if pretrained_weights_path is not None:
             print("NIHDenseBinary loading weights from ", pretrained_weights_path)
             state_dict = torch.load(pretrained_weights_path)
@@ -508,8 +508,50 @@ class NIHDenseBinary(nn.Module):
 
     def train_config(self):
         config = {}
-        # just train the classifier.
-        config['optim']     = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
+        if self.train_features:
+            config['optim'] = optim.Adam(
+                {self.densenet121.classifier.parameters(): 1e-1, self.densenet121.features.parameters(): 1e-4},
+                lr=1e-1, )
+        else:
+            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
         config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 1, gamma=0.1)
         config['max_epoch'] = 20
+        return config
+
+
+class NIHChestVGG(nn.Module):
+    def __init__(self):
+        super(NIHChestVGG, self).__init__()
+
+        # Based on the imagenet normalization params.
+        #self.offset = 0.44900
+        #self.multiplier = 4.42477
+
+        self.cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M']
+        self.model = VGG.VGG(VGG.make_layers(self.cfg, batch_norm=True), num_classes=200)
+        # TinyImagenet would have a different sized feature map.
+        self.model.classifier = nn.Sequential(
+            nn.Linear(512 * 2 * 2, 4096), nn.ReLU(True), nn.Dropout(),
+            nn.Linear(4096, 4096), nn.ReLU(True), nn.Dropout(),
+            nn.Linear(4096, 2),
+        )
+        self.model._initialize_weights()
+
+    def forward(self, x, softmax=True):
+        # Perform late normalization.
+        x = (x-self.offset)*self.multiplier
+
+        output = self.model(x)
+        if softmax:
+            output = F.log_softmax(output, dim=1)
+        return output
+
+    def output_size(self):
+        return torch.LongTensor([1, 2])
+
+    def train_config(self):
+        config = {}
+        config['optim']     = optim.Adam(self.parameters(), lr=1e-3)
+        config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-2, min_lr=1e-6, factor=0.1, verbose=True)
+        config['max_epoch'] = 120
         return config
