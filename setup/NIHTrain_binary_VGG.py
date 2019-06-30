@@ -15,7 +15,7 @@ from models.classifiers import NIHDenseBinary, NIHChestVGG
 from datasets.NIH_Chest import NIHChest
 
 if __name__ == "__main__":
-    dataset = NIHChest(binary=True)
+    dataset = NIHChest(binary=True, downsample=64)
     model = NIHChestVGG()
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train())
 

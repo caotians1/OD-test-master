@@ -21,7 +21,7 @@ def group_normalize(crops):
 
 class NIHChestBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images",
-                 imsize=224, binary=False, download=False, extract=True):
+                 imsize=224, transforms=None, binary=False, download=False, extract=True):
         super(NIHChestBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
@@ -31,9 +31,12 @@ class NIHChestBase(data.Dataset):
         self.image_dir = image_dir
         self.imsize = imsize
         self.binary = binary
-        self.transforms = transforms.Compose([transforms.Resize((256, 256)),
+        if transforms is None:
+            self.transforms = transforms.Compose([transforms.Resize((256, 256)),
                                               transforms.RandomCrop((imsize,imsize)),
                                               transforms.ToTensor()])
+        else:
+            self.transforms = transforms
         assert split in ["train", "val", "test"]
         if extract:
             self.extract()
@@ -152,7 +155,7 @@ class NIHChestBase(data.Dataset):
 
 class NIHChest(AbstractDomainInterface):
     name = "NIHCC"
-    def __init__(self, root_path="./workspace/datasets/NIHCC", leave_out_classes=(), keep_in_classes=None, binary=False, download=False, extract=True):
+    def __init__(self, root_path="./workspace/datasets/NIHCC", leave_out_classes=(), keep_in_classes=None, binary=False, downsample=None, download=False, extract=True):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
@@ -162,11 +165,19 @@ class NIHChest(AbstractDomainInterface):
         self.leave_out_classes = leave_out_classes
         self.keep_in_classes = keep_in_classes
         self.binary = binary
+        self.downsample = downsample
         cache_path = root_path
         source_path = root_path
-        self.ds_train = NIHChestBase(cache_path, source_path, "train", binary=self.binary, download=download, extract=extract)
-        self.ds_valid = NIHChestBase(cache_path, source_path, "val", binary=self.binary, download=download, extract=extract)
-        self.ds_test = NIHChestBase(cache_path, source_path, "test", binary=self.binary, download=download, extract=extract)
+        if downsample is not None:
+            transform = transforms.Compose([transforms.Resize((downsample, downsample)),
+                                            transforms.ToTensor()])
+        else:
+            transform = transforms.Compose([transforms.Resize((256, 256)),
+                                                  transforms.RandomCrop((224, 224)),
+                                                  transforms.ToTensor()])
+        self.ds_train = NIHChestBase(cache_path, source_path, "train", transforms=transform, binary=self.binary, download=download, extract=extract)
+        self.ds_valid = NIHChestBase(cache_path, source_path, "val", transforms=transform, binary=self.binary, download=download, extract=extract)
+        self.ds_test = NIHChestBase(cache_path, source_path, "test", transforms=transform, binary=self.binary, download=download, extract=extract)
         if extract:
             self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
             self.D1_valid_ind = self.get_filtered_inds(self.ds_valid, shuffle=True)
@@ -223,10 +234,13 @@ class NIHChest(AbstractDomainInterface):
         return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
 
     def conformity_transform(self):
+        target = 224
+        if self.downsample is not None:
+            target = self.downsample
         return transforms.Compose([ExpandRGBChannels(),
                                     transforms.ToPILImage(),
                                    #transforms.Grayscale(),
-                                   transforms.Resize((224, 224)),
+                                   transforms.Resize((target, target)),
                                    transforms.ToTensor()
                                    ])
 

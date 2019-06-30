@@ -510,8 +510,8 @@ class NIHDenseBinary(nn.Module):
         config = {}
         if self.train_features:
             config['optim'] = optim.Adam(
-                {self.densenet121.classifier.parameters(): 1e-1, self.densenet121.features.parameters(): 1e-4},
-                lr=1e-1, )
+                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-1}, {'params':self.densenet121.features.parameters()}],
+                lr=1e-1)
         else:
             config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
         config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 1, gamma=0.1)
@@ -539,8 +539,6 @@ class NIHChestVGG(nn.Module):
 
     def forward(self, x, softmax=True):
         # Perform late normalization.
-        x = (x-self.offset)*self.multiplier
-
         output = self.model(x)
         if softmax:
             output = F.log_softmax(output, dim=1)
