@@ -65,8 +65,11 @@ if __name__ == '__main__':
     for m in [d1_tasks, d2_tasks, d3_tasks]:
         for d in m:
             if not d in ds_cache:
-                ds_cache[d] = Global.all_datasets[d](root_path=args.root_path)
-
+                dataset = Global.all_datasets[d]
+                if "name" in dataset.__dict__:
+                    ds_cache[d] = dataset(root_path=os.path.join(args.root_path, dataset.name))
+                else:
+                    ds_cache[d] = dataset()
     results = []
     # If results exists already, just continue where left off.
     results_path = os.path.join(args.experiment_path, 'results.pth')
