@@ -2,7 +2,7 @@
 #SBATCH --account=rpp-bengioy
 #SBATCH --gres=gpu:1
 #SBATCH --mem=16G
-#SBATCH -c 4
+#SBATCH -c 6
 #SBATCH -n 1
 #SBATCH --tmp=256G
 #SBATCH --time=10:00:00
@@ -22,5 +22,5 @@ done
 
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
-ln -sf $SLURM_TMPDIR/data workspace/datasets
-python setup/NIHTrain_binary.py --exp="nihbinaryfull" --batch-size=64 --no-visualize --save
+ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
+python setup/NIHTrain_binary.py --root_path="workspace/datasets-%s"%$SLURM_JOBID --exp="nihbinaryfull" --batch-size=64 --no-visualize --save --workers=6

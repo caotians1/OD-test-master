@@ -65,7 +65,7 @@ if __name__ == '__main__':
     for m in [d1_tasks, d2_tasks, d3_tasks]:
         for d in m:
             if not d in ds_cache:
-                ds_cache[d] = Global.all_datasets[d]()
+                ds_cache[d] = Global.all_datasets[d](root_path=args.root_path)
 
     results = []
     # If results exists already, just continue where left off.

@@ -15,7 +15,7 @@ from models.classifiers import NIHDenseBinary, NIHChestVGG
 from datasets.NIH_Chest import NIHChest
 
 if __name__ == "__main__":
-    dataset = NIHChest(binary=True)
+    dataset = NIHChest(root_path=args.root_path, binary=True)
     model = NIHDenseBinary("model.pth.tar", train_features=True)
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train())
 

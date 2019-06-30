@@ -21,7 +21,7 @@ class DummyArg(object):
 parser = ArgumentParser(description='The OD-test evaluation framework.')
 
 parser.add_argument('--no-visualize', default=True, action='store_true', help='Disable visdom visualization. (default False)')
-
+parser.add_argument('--root_path', type=str, help="unique path for symlink to dataset")
 parser.add_argument('--seed', type=int, default=42, help='Random seed. (default 42)')
 parser.add_argument('--batch-size', type=int, default=128, help='Batch size (default 128)')
 parser.add_argument('--workers', type=int, default=4, help='Number of dataloader workers. (default 4)')
