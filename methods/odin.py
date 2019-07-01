@@ -192,8 +192,8 @@ class ODIN(ProbabilityThreshold):
             train_ds = new_train_ds
 
         # As suggested by the authors.
-        all_temperatures = [1, 10, 100]#[1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-        all_epsilons     = torch.linspace(0, 0.004, 3)#torch.linspace(0, 0.004, 21)
+        all_temperatures = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+        all_epsilons     = torch.linspace(0, 0.004, 21)
         total_params = len(all_temperatures) * len(all_epsilons)
         best_accuracy = -1
 

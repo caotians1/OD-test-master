@@ -18,7 +18,7 @@ class CIFAR10(AbstractDomainInterface):
         D2 (Dv, Dt): 50,000 valid + 10,000 test.
     """
     name="cifar10"
-    def __init__(self, root_path='./workspace/datasets/cifar10', **kwargs):
+    def __init__(self, root_path='./workspace/datasets/cifar10', download=False, extract=False):
         super(CIFAR10, self).__init__()
         
         im_transformer  = transforms.Compose([transforms.ToTensor()])
@@ -32,11 +32,11 @@ class CIFAR10(AbstractDomainInterface):
         self.ds_train   = datasets.CIFAR10(root_path,
                                         train=True,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
         self.ds_test    = datasets.CIFAR10(root_path,
                                         train=False,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
     
     def get_D1_train(self):
         return SubDataset(self.name, self.ds_train, self.D1_train_ind)
@@ -67,7 +67,7 @@ class CIFAR100(AbstractDomainInterface):
         D2 (Dv , Dt): 50,000 valid + 10,000 test.
     """
     name = "cifar100"
-    def __init__(self, root_path="./workspace/datasets/cifar100", **kwargs):
+    def __init__(self, root_path="./workspace/datasets/cifar100", download=False, extract=False):
         super(CIFAR100, self).__init__()
         
         im_transformer  = transforms.Compose([transforms.ToTensor()])
@@ -81,11 +81,11 @@ class CIFAR100(AbstractDomainInterface):
         self.ds_train   = datasets.CIFAR100(root_path,
                                         train=True,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
         self.ds_test    = datasets.CIFAR100(root_path,
                                         train=False,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
 
         """
             TinyImagenet:

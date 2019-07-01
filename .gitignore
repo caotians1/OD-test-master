@@ -105,3 +105,4 @@ venv.bak/
 .mypy_cache/
 
 workspace/
+bash_scratch_space.sh

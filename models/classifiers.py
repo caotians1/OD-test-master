@@ -494,7 +494,7 @@ class NIHDenseBinary(nn.Module):
 
             self.load_state_dict(state_dict['state_dict'], strict=False)
         feature_dim = self.densenet121.classifier.in_features
-        self.densenet121.classifier = nn.Sequential(nn.Dropout(), nn.Linear(feature_dim, 2))
+        self.densenet121.classifier =nn.Linear(feature_dim, 2)
 
     def forward(self, x, softmax=True):
         output = self.densenet121(x)

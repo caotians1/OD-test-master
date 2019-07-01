@@ -19,7 +19,7 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         CIFAR.CIFAR10, CIFAR.CIFAR100,
                         STL.STL10, TI.TinyImagenet,
                         noise.UniformNoise, noise.NormalNoise,
-                        STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary]
+                        STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest]
 
 """
     Not all the datasets can be used as a Dv, Dt (aka D2) for each dataset.
@@ -29,14 +29,14 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
 """
 d2_compatiblity = {
     # This can be used as d2 for            # this
-    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary'],
-    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary'],
-    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary'],
-    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary'],
-    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary'],
-    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary'],
-    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHChestBinary'],
-    'NIHChestBinary'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32']
+    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
+    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
+    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
+    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
+    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
+    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
+    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHChestBinary', 'NIHChestBinaryTest'],
+    'NIHChestBinary'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTest']
     # STL10 is not compatible with CIFAR10 because of the 9-overlapping classes.
     # Erring on the side of caution.
 }
@@ -44,7 +44,7 @@ d2_compatiblity = {
 # We can augment the following training data with mirroring.
 # We make sure there's no information leak in-between tasks.
 mirror_augment = {
-    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary'
+    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'
 }
 
 """
@@ -54,6 +54,13 @@ mirror_augment = {
 import models.classifiers as CLS
 import models.autoencoders as AES
 import models.pixelcnn.model as PCNN
+
+class ModelFactory(object):
+    def __init__(self, parent_class, **kwargs):
+        self.parent_class = parent_class
+        self.kwargs = kwargs
+    def __call__(self):
+        return self.parent_class(**self.kwargs)
 
 """
     Each dataset has a list of compatible neural netwok architectures.
@@ -67,15 +74,11 @@ dataset_reference_classifiers = {
     'CIFAR100':               [CLS.CIFAR100_VGG,      CLS.CIFAR100_Resnet],
     'STL10':                  [CLS.STL10_VGG,         CLS.STL10_Resnet],
     'TinyImagenet':           [CLS.TinyImagenet_VGG,  CLS.TinyImagenet_Resnet],
-    'NIHChestBinary':                [CLS.NIHDenseBinary, ]
+    'NIHChestBinary':         [CLS.NIHDenseBinary, ModelFactory(CLS.NIHDenseBinary, train_features=True), CLS.NIHChestVGG],
+    'NIHChestBinaryTest': [CLS.NIHDenseBinary, ModelFactory(CLS.NIHDenseBinary, train_features=True), CLS.NIHChestVGG],
 }
 
-class ModelFactory(object):
-    def __init__(self, parent_class, **kwargs):
-        self.parent_class = parent_class
-        self.kwargs = kwargs
-    def __call__(self):
-        return self.parent_class(**self.kwargs)
+
 
 dataset_reference_autoencoders = {
     'MNIST':              [ModelFactory(AES.Generic_AE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],

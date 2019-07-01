@@ -148,7 +148,10 @@ class ProbabilityThreshold(AbstractMethodInterface):
             x_center = trainX[trainY==0].mean()
             y_center = trainX[trainY==1].mean()
             init_value = (x_center+y_center)/2
-            model.H.threshold.fill_(init_value)
+            if model.H.threshold.device.type == "cpu":
+                model.H.threshold.data = init_value.view((1,))
+            else:
+                model.H.threshold.data = init_value.cuda().view((1,))
             print("Initializing threshold to %.2f"%(init_value.item()))
 
             new_valid_ds = TensorDataset(validX, validY)

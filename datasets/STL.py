@@ -12,7 +12,7 @@ class STL10(AbstractDomainInterface):
         D2:    5,000 valid + 8,000 test.
     """
     name="stl10"
-    def __init__(self, downsample=None, root_path='./workspace/datasets/stl10', **kwargs):
+    def __init__(self, downsample=None, root_path='./workspace/datasets/stl10', download=False, extract=False):
         super(STL10, self).__init__()
 
         im_transformer = None
@@ -31,11 +31,11 @@ class STL10(AbstractDomainInterface):
         self.ds_train   = datasets.STL10(root_path,
                                         split='train',
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
         self.ds_test    = datasets.STL10(root_path,
                                         split='test',
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
     
     def get_D1_train(self):
         return SubDataset(self.name, self.ds_train, self.D1_train_ind)

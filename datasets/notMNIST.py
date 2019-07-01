@@ -138,7 +138,7 @@ class NotMNIST(AbstractDomainInterface):
         D2: 9362 Valid, 9362 Test. (indices chosen at random)
     """
     name="notmnist"
-    def __init__(self, root_path='./workspace/datasets/notmnist', **kwargs):
+    def __init__(self, root_path='./workspace/datasets/notmnist', download=False, extract=False):
         super(NotMNIST, self).__init__()
         
         im_transformer  = transforms.Compose([transforms.ToTensor()])
@@ -146,7 +146,7 @@ class NotMNIST(AbstractDomainInterface):
         self.ds_train   = NotMNISTParent(root_path,
                                          train=True,
                                          transform=im_transformer,
-                                         download=kwargs['download'])
+                                         download=download)
 
         index_file = os.path.join('./datasets/permutation_files/', 'notmnist.pth')
         all_indices = None

@@ -10,7 +10,7 @@ class MNIST(AbstractDomainInterface):
         Dv, Dt: 60,000 valid + 10,000 test.
     """
     name = "mnist"
-    def __init__(self, root_path='./workspace/datasets/mnist', **kwargs):
+    def __init__(self, root_path='./workspace/datasets/mnist', download=False, extract=False):
         super(MNIST, self).__init__()
 
         im_transformer  = transforms.Compose([transforms.ToTensor()])
@@ -25,11 +25,11 @@ class MNIST(AbstractDomainInterface):
         self.ds_train   = datasets.MNIST(root_path,
                                         train=True,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
         self.ds_test    = datasets.MNIST(root_path,
                                         train=False,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
     
     def get_D1_train(self):
         return SubDataset(self.name, self.ds_train, self.D1_train_ind)

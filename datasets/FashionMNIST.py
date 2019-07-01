@@ -11,7 +11,7 @@ class FashionMNIST(AbstractDomainInterface):
         D2: 60,000 valid + 10,000 test.
     """
     name = "fmnist"
-    def __init__(self, root_path='./workspace/datasets/fmnist', **kwargs):
+    def __init__(self, root_path='./workspace/datasets/fmnist', download=False, extract=False):
         super(FashionMNIST, self).__init__()
 
         im_transformer  = transforms.Compose([transforms.ToTensor()])
@@ -25,11 +25,11 @@ class FashionMNIST(AbstractDomainInterface):
         self.ds_train   = datasets.FashionMNIST(root_path,
                                         train=True,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
         self.ds_test    = datasets.FashionMNIST(root_path,
                                         train=False,
                                         transform=im_transformer,
-                                        download=kwargs['download'])
+                                        download=download)
     
     def get_D1_train(self):
         return SubDataset(self.name, self.ds_train, self.D1_train_ind)
