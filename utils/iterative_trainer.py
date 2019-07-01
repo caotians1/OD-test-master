@@ -173,4 +173,4 @@ class IterativeTrainer(object):
                 logger.get_measure('%s_accuracy'%phase_name).measure_normalizer = len(dataset.dataset)
 
         elapsed = timeit.default_timer() - start_time
-        print('  %s Epoch %d in %.2fs' %(phase_name, epoch, elapsed))
+        #print('  %s Epoch %d in %.2fs' %(phase_name, epoch, elapsed))
