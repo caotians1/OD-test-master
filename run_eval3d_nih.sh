@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=rpp-bengioy
 #SBATCH --gres=gpu:1
-#SBATCH --mem=24G
+#SBATCH --mem=64G
 #SBATCH -c 8
 #SBATCH -n 1
 #SBATCH --tmp=256G
