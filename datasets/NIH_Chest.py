@@ -69,7 +69,7 @@ class NIHChestBase(data.Dataset):
                 if self.to_rgb:
                     img = self.transforms(img.convert('RGB'))
                 else:
-                    img = self.transforms(img)
+                    img = self.transforms(img.convert('L'))
         return img, label
 
     def extract(self):
