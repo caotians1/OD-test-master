@@ -217,7 +217,7 @@ class NIHChest(AbstractDomainInterface):
                     keep_in_mask_label[ii] = 1
             keep_inds = []
             for seq_ind, base_ind in enumerate(basedata.split_inds):
-                label = basedata.label_tensors[base_ind]
+                label = basedata.label_tensors[base_ind].int()
                 if torch.sum(label * leave_out_mask_label) == 0 and torch.sum(label * keep_in_mask_label) > 0:
                     keep_inds.append(seq_ind)
                 else:

@@ -476,6 +476,7 @@ class NIHDenseBinary(nn.Module):
         super(NIHDenseBinary, self).__init__()
         self.train_features = train_features
         self.densenet121 = Densenet.densenet121(pretrained=False)
+        self.densenet121.features[0] = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         if pretrained_weights_path is not None:
             print("NIHDenseBinary loading weights from ", pretrained_weights_path)
             state_dict = torch.load(pretrained_weights_path)

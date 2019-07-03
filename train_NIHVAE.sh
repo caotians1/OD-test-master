@@ -21,4 +21,4 @@ tar -xzf $SLURM_TMPDIR/data/NIHCC/images_224.tar.gz -C $SLURM_TMPDIR/data/NIHCC/
 source $SLURM_TMPDIR/env/temp/bin/activate
 #python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/NIHTrain_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHVAE" --batch-size=64 --no-visualize --save --workers=8
+python setup/NIHTrainVAE.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHVAE" --batch-size=64 --no-visualize --save --workers=8

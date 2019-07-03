@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --account=rpp-bengioy
 #SBATCH --gres=gpu:1
-#SBATCH --mem=16G
+#SBATCH --mem=32G
 #SBATCH -c 8
 #SBATCH -n 1
 #SBATCH --tmp=256G
@@ -26,4 +26,4 @@ tar -xzf $SLURM_TMPDIR/data/NIHCC/images_224.tar.gz -C $SLURM_TMPDIR/data/NIHCC/
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/NIHTrain_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp="nihbinary_test" --batch-size=64 --no-visualize --save --workers=8
+python setup/NIHTrain_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHDense" --batch-size=64 --no-visualize --save --workers=8
