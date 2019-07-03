@@ -20,7 +20,7 @@ def group_normalize(crops):
                                       [0.229, 0.224, 0.225])(crop) for crop in crops])
 
 class NIHChestBase(data.Dataset):
-    def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images",
+    def __init__(self, index_cache_path, source_dir, split, index_file="Data_Entry_2017.csv", image_dir="images_224",
                  imsize=224, transforms=None, binary=False, to_rgb=False, download=False, extract=True):
         super(NIHChestBase,self).__init__()
         self.index_cache_path = index_cache_path
@@ -160,7 +160,7 @@ class NIHChestBase(data.Dataset):
 class NIHChest(AbstractDomainInterface):
     name = "NIHCC"
     def __init__(self, root_path="./workspace/datasets/NIHCC", leave_out_classes=(), keep_in_classes=None,
-                 binary=False, downsample=None, expand_channels=True, test_length=None, download=False,
+                 binary=False, downsample=None, expand_channels=False, test_length=None, download=False,
                  extract=True):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
@@ -253,12 +253,21 @@ class NIHChest(AbstractDomainInterface):
         target = 224
         if self.downsample is not None:
             target = self.downsample
-        return transforms.Compose([ExpandRGBChannels(),
-                                    transforms.ToPILImage(),
-                                   #transforms.Grayscale(),
-                                   transforms.Resize((target, target)),
-                                   transforms.ToTensor()
-                                   ])
+        if self.expand_channels:
+            return transforms.Compose([ExpandRGBChannels(),
+                                        transforms.ToPILImage(),
+                                       #transforms.Grayscale(),
+                                       transforms.Resize((target, target)),
+                                       transforms.ToTensor()
+                                       ])
+        else:
+            return transforms.Compose([
+                                       transforms.ToPILImage(),
+                                       transforms.Grayscale(),
+                                       transforms.Resize((target, target)),
+                                       transforms.ToTensor()
+                                       ])
+
 
 class NIHChestBinary(NIHChest):
     def __init__(self, *args, **kwargs):
@@ -273,6 +282,30 @@ class NIHChestBinaryTest(NIHChest):
         print(kwargs)
         super(NIHChestBinaryTest, self).__init__(*args, **kwargs)
         return
+
+
+class NIHChestBinaryTrainSplit(NIHChest):
+    name = "NIHCC"
+    def __init__(self, *args, **kwargs):
+        kwargs.update({'binary': True, 'test_length': 5000,
+                          'leave_out_classes':['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']})
+        super(NIHChestBinaryTrainSplit, self).__init__(*args, **kwargs)
+
+
+class NIHChestBinaryValSplit(NIHChest):
+    name = "NIHCC"
+    def __init__(self, *args, **kwargs):
+        kwargs.update({'binary': True, 'test_length': 5000,
+                       'keep_in_classes': ['Cardiomegaly',]})
+        super(NIHChestBinaryValSplit, self).__init__(*args, **kwargs)
+
+
+class NIHChestBinaryTestSplit(NIHChest):
+    name = "NIHCC"
+    def __init__(self, *args, **kwargs):
+        kwargs.update({'binary': True, 'test_length': 5000,
+                       'keep_in_classes': ['Pneumothorax', 'Nodule', 'Mass']})
+        super(NIHChestBinaryTestSplit, self).__init__(*args, **kwargs)
 
 if __name__ == "__main__":
     dataset = NIHChest()

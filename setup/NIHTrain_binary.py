@@ -12,13 +12,11 @@ from utils.args import args
 
 import categories.classifier_setup as CLSetup
 from models.classifiers import NIHDenseBinary
-from datasets.NIH_Chest import NIHChest
+from datasets.NIH_Chest import NIHChestBinaryTrainSplit
 
 if __name__ == "__main__":
-    dataset = NIHChest(root_path=os.path.join(args.root_path, "NIHCC"), binary=True)
-    model = NIHDenseBinary("model.pth.tar")
-
-
+    dataset = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "NIHCC"), binary=True)
+    model = NIHDenseBinary("mono_model.pth.tar")
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train())
 
     # task_list = [

@@ -19,7 +19,7 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         CIFAR.CIFAR10, CIFAR.CIFAR100,
                         STL.STL10, TI.TinyImagenet,
                         noise.UniformNoise, noise.NormalNoise,
-                        STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest]
+                        STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest, NC.NIHChestBinaryTrainSplit, NC.NIHChestBinaryValSplit, NC.NIHChestBinaryTestSplit]
 
 """
     Not all the datasets can be used as a Dv, Dt (aka D2) for each dataset.
@@ -29,14 +29,16 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
 """
 d2_compatiblity = {
     # This can be used as d2 for            # this
-    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
-    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
-    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
-    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
-    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
-    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'],
-    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHChestBinary', 'NIHChestBinaryTest'],
-    'NIHChestBinary'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTest']
+    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'NIHChestBinary'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'],
+    'NIHChestBinaryTestSplit'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTrainSplit'],
+    'NIHChestBinaryValSplit'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTrainSplit'],
     # STL10 is not compatible with CIFAR10 because of the 9-overlapping classes.
     # Erring on the side of caution.
 }
@@ -44,7 +46,7 @@ d2_compatiblity = {
 # We can augment the following training data with mirroring.
 # We make sure there's no information leak in-between tasks.
 mirror_augment = {
-    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest'
+    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTrainSplit'
 }
 
 """
@@ -76,6 +78,7 @@ dataset_reference_classifiers = {
     'TinyImagenet':           [CLS.TinyImagenet_VGG,  CLS.TinyImagenet_Resnet],
     'NIHChestBinary':         [CLS.NIHDenseBinary, ModelFactory(CLS.NIHDenseBinary, train_features=True), CLS.NIHChestVGG],
     'NIHChestBinaryTest': [CLS.NIHDenseBinary, ModelFactory(CLS.NIHDenseBinary, train_features=True), CLS.NIHChestVGG],
+    'NIHChestBinaryTrainSplit': [CLS.NIHDenseBinary, CLS.NIHChestVGG],
 }
 
 
@@ -87,6 +90,7 @@ dataset_reference_autoencoders = {
     'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+    'NIHChestBinaryTrainSplit': [ModelFactory(AES.Generic_AE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_vaes = {

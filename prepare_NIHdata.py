@@ -6,10 +6,10 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('source_dir', default="E:\\NIHCC")
-    parser.add_argument('index_file', default="Data_Entry_2017.csv")
-    parser.add_argument('image_dir', default="images")
-    parser.add_argument('proc_dir', default="E:\\NIHCC\\images_224")
+    parser.add_argument('--source_dir', default="E:\\NIHCC")
+    parser.add_argument('--index_file', default="Data_Entry_2017.csv")
+    parser.add_argument('--image_dir', default="images")
+    parser.add_argument('--proc_dir', default="E:\\NIHCC\\images_224")
     args = parser.parse_args()
     source_dir = args.source_dir
     index_file = args.index_file
