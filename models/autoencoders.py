@@ -129,6 +129,7 @@ class VAE_Loss(nn.Module):
         assert VAE_model.__class__ == Generic_VAE, 'Only Generic_VAEs are accepted.'
         self.VAE = VAE_model
         self.size_average = True
+        self.reduction = 'sum'
         self.BCE = nn.BCELoss(size_average=False)
     def forward(self, X, Y):
         BCE_loss = self.BCE(X, Y)
