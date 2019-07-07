@@ -17,7 +17,7 @@ class CIFAR10(AbstractDomainInterface):
         D1: (40,000 train + 10,000 valid) + (10,000 test)
         D2 (Dv, Dt): 50,000 valid + 10,000 test.
     """
-    name="cifar10"
+    dataset_path="cifar10"
     def __init__(self, root_path='./workspace/datasets/cifar10', download=False, extract=False):
         super(CIFAR10, self).__init__()
         
@@ -66,7 +66,7 @@ class CIFAR100(AbstractDomainInterface):
         D1: (40,000 train + 10,000 valid) + (10,000 test)
         D2 (Dv , Dt): 50,000 valid + 10,000 test.
     """
-    name = "cifar100"
+    dataset_path = "cifar100"
     def __init__(self, root_path="./workspace/datasets/cifar100", download=False, extract=False):
         super(CIFAR100, self).__init__()
         

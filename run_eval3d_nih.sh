@@ -16,8 +16,9 @@ cp -r  ~/projects/rpp-bengioy/caotians/data/* $SLURM_TMPDIR/data
 
 mkdir -p $SLURM_TMPDIR/data/NIHCC/images_224
 tar -xzf $SLURM_TMPDIR/data/NIHCC/images_224.tar.gz -C $SLURM_TMPDIR/data/NIHCC/images_224 --strip-components=1
+tar -xzf $SLURM_TMPDIR/data/MURA/images_224.tar.gz -C $SLURM_TMPDIR/data/MURA
 
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python eval3d_nih.py --root_path=workspace/datasets-$SLURM_JOBID --exp="eval3d_nih_odin+pthreshold" --batch-size=64 --no-visualize --save --workers=8
+python eval3d_nih.py --root_path=workspace/datasets-$SLURM_JOBID --exp="eval3d_nih_uc13" --batch-size=64 --no-visualize --save --workers=8

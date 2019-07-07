@@ -9,7 +9,7 @@ class MNIST(AbstractDomainInterface):
         Ds: (50,000 train + 10,000 valid) + (10,000 test)
         Dv, Dt: 60,000 valid + 10,000 test.
     """
-    name = "mnist"
+    dataset_path = "mnist"
     def __init__(self, root_path='./workspace/datasets/mnist', download=False, extract=False):
         super(MNIST, self).__init__()
 

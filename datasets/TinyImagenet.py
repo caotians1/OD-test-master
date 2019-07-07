@@ -228,7 +228,7 @@ class TinyImagenet(AbstractDomainInterface):
         D1: 100,000 train (shuffled), 10,000 valid, 10,000 test.
         D2: 10,000 Valid + 100,000 train (shuffled), 10,000 Test.
     """
-    name="tinyimagenet"
+    dataset_path="tinyimagenet"
     def __init__(self, root_path='./workspace/datasets/tinyimagenet', downsample=None, download=True, extract=True):
         super(TinyImagenet, self).__init__()
         

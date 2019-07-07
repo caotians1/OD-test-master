@@ -11,6 +11,7 @@ from utils.logger import Logger
 import os
 from os import path
 from termcolor import colored
+from sklearn.metrics import roc_curve, roc_auc_score
 
 from methods import AbstractMethodInterface, AbstractModelWrapper, SVMLoss
 from datasets import MirroredDataset
@@ -187,7 +188,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=0)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)
         config.logger = Logger()
-        config.max_epoch = 100
+        config.max_epoch = 10
 
         return config
 
@@ -274,6 +275,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         correct = 0.0
         total_count = 0
         self.H_class.eval()
+        weighted_AUROC = 0.0
         with tqdm(total=len(dataset)) as pbar:
             for i, (image, label) in enumerate(dataset):
                 pbar.update()
@@ -283,6 +285,8 @@ class ProbabilityThreshold(AbstractMethodInterface):
 
                 prediction = self.H_class(input)
                 classification = self.H_class.classify(prediction)
+                roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")
+                weighted_AUROC += roc * len(input)
 
                 correct += (classification.detach().view(-1) == target.detach().view(-1).long()).float().view(-1).sum()
                 total_count += len(input)
@@ -301,5 +305,6 @@ class ProbabilityThreshold(AbstractMethodInterface):
                 #     visdom.images(s2.cpu().numpy(), win='out_images')                                    
         
         test_average_acc = correct/total_count
-        print("Final Test average accuracy %s"%(colored('%.4f%%'%(test_average_acc*100),'red')))
-        return test_average_acc.item()
+        average_auroc = weighted_AUROC/total_count
+        print("Final Test average accuracy %s, AUROC %s"%(colored('%.4f%%'%(test_average_acc*100),'red'), colored('%.4f%%'%(average_auroc*100),'green')))
+        return test_average_acc.item(), average_auroc

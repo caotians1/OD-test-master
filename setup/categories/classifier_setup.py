@@ -69,7 +69,7 @@ def get_classifier_config(args, model, dataset):
 def train_classifier(args, model, dataset):
     config = get_classifier_config(args, model, dataset)
 
-    home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, dataset.name, model_setup=True, suffix_str='base')
+    home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, dataset.name, model_setup=True, suffix_str='base0')
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
     if not os.path.isdir(home_path):

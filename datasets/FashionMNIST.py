@@ -10,7 +10,7 @@ class FashionMNIST(AbstractDomainInterface):
         D1: (50,000 train + 10,000 valid) + (10,000 test)
         D2: 60,000 valid + 10,000 test.
     """
-    name = "fmnist"
+    dataset_path = "fmnist"
     def __init__(self, root_path='./workspace/datasets/fmnist', download=False, extract=False):
         super(FashionMNIST, self).__init__()
 

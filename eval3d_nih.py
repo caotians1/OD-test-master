@@ -6,156 +6,155 @@ import torch
 
 from utils.args import args
 import global_vars as Global
-from datasets.NIH_Chest import NIHChestBinaryTest
+from datasets.NIH_Chest import NIHChestBinaryTrainSplit, NIHChestBinaryValSplit, NIHChestBinaryTestSplit
+from models.ALImodel import *
 
-if __name__ == '__main__':
+def train_subroutine(ODmethod, D1, D2):
+    d1_train = D1.get_D1_train()
+    ODmethod.propose_H(d1_train)
+    d1_valid = D1.get_D1_valid()
+    d2_valid = D2.get_D2_valid(D1)
+    d1_valid_len = len(d1_valid)
+    d2_valid_len = len(d2_valid)
+    final_len = min(d1_valid_len, d2_valid_len)
+    print("Adjusting %s and %s to %s" % (colored('D1=%d' % d1_valid_len, 'red'),
+                                         colored('D2=%d' % d2_valid_len, 'red'),
+                                         colored('Min=%d' % final_len, 'green')))
+    d1_valid.trim_dataset(final_len)
+    d2_valid.trim_dataset(final_len)
+    valid_mixture = d1_valid + d2_valid
+    print("Final valid size: %d+%d=%d" % (len(d1_valid), len(d2_valid), len(valid_mixture)))
+    train_acc = ODmethod.train_H(valid_mixture)
+    return train_acc
 
-    d2_tasks     = ['CIFAR10','UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST',  'CIFAR100', 'STL10', 'TinyImagenet']
-    d3_tasks     = ['CIFAR10','UniformNoise', 'NormalNoise', 'MNIST', 'FashionMNIST', 'NotMNIST',  'CIFAR100', 'STL10', 'TinyImagenet']
-    method_tasks     = [
-                        'prob_threshold/0',
-                        'odin/0',
-                        ]
 
-    # Construct the dataset cache
-    ds_cache = {}
-    D1 = NIHChestBinaryTest(root_path=os.path.join(args.root_path, 'NIHCC'))
-    for m in [d2_tasks, d3_tasks]:
-        for d in m:
-            if not d in ds_cache:
-                dataset = Global.all_datasets[d]
-                if "name" in dataset.__dict__:
-                    ds_cache[d] = dataset(root_path=os.path.join(args.root_path, dataset.name))
-                else:
-                    ds_cache[d] = dataset()
+def eval_subroutine(ODmethod, D1, D3):
+    d1_test = D1.get_D1_test()
+    d3_test = D3.get_D2_test(D1)
+    # Adjust the sizes.
+    d1_test_len = len(d1_test)
+    d3_test_len = len(d3_test)
+    final_len = min(d1_test_len, d3_test_len)
+    print("Adjusting %s and %s to %s" % (colored('D1=%d' % d1_test_len, 'red'),
+                                         colored('D2=%d' % d3_test_len, 'red'),
+                                         colored('Min=%d' % final_len, 'green')))
+    d1_test.trim_dataset(final_len)
+    d3_test.trim_dataset(final_len)
+    test_mixture = d1_test + d3_test
+    print("Final test size: %d+%d=%d" % (len(d1_test), len(d3_test), len(test_mixture)))
 
-    results = []
+    test_acc, test_auroc = ODmethod.test_H(test_mixture)
+    return test_acc, test_auroc
+
+
+def init_and_load_results(path, args):
     # If results exists already, just continue where left off.
+
+    if os.path.exists(path) and not args.force_run:
+        print("Loading previous checkpoint")
+        results = torch.load(path)
+        if type(results) is dict:
+            if results['ver'] == RESULTS_VER:
+                print("Loaded previous checkpoint")
+                return results
+    print("No compatible result found, initializing fresh results")
+    return {'ver': RESULTS_VER, 'results':[]}
+
+
+def has_done_before(method, d1, d2, d3):
+    for m, ds, dm, dt, mid, a1, a2, a3 in results['results']:
+        if m == method and ds == d1 and dm == d2 and dt == d3:
+            return True
+    return False
+
+
+RESULTS_VER = 0
+if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
-    if os.path.exists(results_path) and not args.force_run:
-        print ("Loading previous checkpoint")
-        results = torch.load(results_path)
-
-    def has_done_before(method, d1, d2, d3):
-        for m, ds, dm, dt, mid, a1, a2 in results:
-            if m == method and ds == d1 and dm == d2 and dt == d3:
-                return True
-        return False
+    results = init_and_load_results(results_path, args)
+    methods = ['mcdropout/0',
+               'prob_threshold/0',    'prob_threshold/1',
+               'score_svm/0',          'score_svm/1',
+               'openmax/0',            'openmax/1',
+               'binclass/0',           'binclass/1',
+               'odin/0',               'odin/1',
 
 
-    args.D1 = 'NIHChest'
-    for method in method_tasks:
-        BT = Global.get_method(method, args)
-        for d2 in d2_tasks:
-            args.D2 = d2
+        ]
+    methods_64 = [
+         'reconst_thresh/0',     'reconst_thresh/1',
+         'ALI_reconst/0', 'ALI_reconst/1', 'ALI_reconst/0',
+         'knn/1', 'knn/2', 'knn/4', 'knn/8',
+         'bceaeknn/1', 'vaeaeknn/1', 'mseaeknn/1',
+         'bceaeknn/2', 'vaeaeknn/2', 'mseaeknn/2',
+         'bceaeknn/4', 'vaeaeknn/4', 'mseaeknn/4',
+         'bceaeknn/8', 'vaeaeknn/8', 'mseaeknn/8',
+    ]
 
-            print ("Performing %s on %s vs. %s"%(colored(method, 'green'), colored('NIHChest', 'blue'), colored(d2, 'red')))
+    D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
+    D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64)
+    args.D1 = 'NIHCC'
 
-            ds1 = D1
-            ds2 = ds_cache[args.D2]
+    # Usecase 1 Evaluation
+    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'NIHCC'))
+    args.D2 = "CIFAR10"
+    d3s = ['UniformNoise',
+           'NormalNoise',
+           'MNIST',
+           'FashionMNIST',
+           'NotMNIST',
+           'CIFAR100',
+           'STL10',
+           'TinyImagenet',
+           'MURA',
+           ]
+    D3s=[]
+    for d3 in d3s:
+        dataset = Global.all_datasets[d3]
+        if dataset.dataset_path is not None:
+            D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
+        else:
+            D3s.append(dataset())
 
-            if not ds2.is_compatible(ds1):
-                print ('%s is not compatible with %s, skipping.'%(colored(ds2.name, 'red'), colored(ds1.name, 'red')))
-                continue
-
-            if torch.ByteTensor(
-                    [has_done_before(method, 'NIHChest', d2, d3) or not ds_cache[d3].is_compatible(ds1) or d2 == d3 for d3 in d3_tasks]
-                ).all():
-                continue
-
-            valid_mixture = None
-
-            if not method.startswith('binclass'):
-                # Stage 1: Propose H
-                d1_train = ds1.get_D1_train()
-                BT.propose_H(d1_train)
-
-                # Stage 2: Train for h \in H
-                d1_valid = ds1.get_D1_valid()
-                d2_valid = ds2.get_D2_valid(ds1)
-
-                # Adjust the sizes.
-                d1_valid_len = len(d1_valid)
-                d2_valid_len = len(d2_valid)
-                final_len = min(d1_valid_len, d2_valid_len)
-                print("Adjusting %s and %s to %s"%(colored('D1=%d'%d1_valid_len, 'red'),
-                                                colored('D2=%d'%d2_valid_len, 'red'),
-                                                colored('Min=%d'%final_len, 'green')))
-                d1_valid.trim_dataset(final_len)
-                d2_valid.trim_dataset(final_len)
-                valid_mixture = d1_valid + d2_valid
-                print("Final valid size: %d+%d=%d"%(len(d1_valid), len(d2_valid), len(valid_mixture)))
-            else:
-                print(colored('Binary evaluation mode', 'red'))
-                # There's no stage one; the method would do everything in the
-                # second stage.
-
-                # Get the first split. Overwrite the label
-                d1_train = ds1.get_D1_train()
-                d1_train.label = 0
-                cls_name = d1_train.name
-
-                # Stage 2: Train for h \in H
-                d1_valid = ds1.get_D1_valid()
-                d2_valid = ds2.get_D2_valid(ds1)
-
-                # Adjust the sizes. Make sure this method does not see more valid data as other methods.
-                d1_valid_len = len(d1_valid)
-                d2_valid_len = len(d2_valid)
-                final_len = min(d1_valid_len, d2_valid_len)
-                print("Adjusting %s and %s to %s"%(colored('D1=%d'%d1_valid_len, 'red'),
-                                                colored('D2=%d'%d2_valid_len, 'red'),
-                                                colored('Min=%d'%final_len, 'green')))
-                d1_valid.trim_dataset(final_len)
-                d2_valid.trim_dataset(final_len)
-                valid_mixture = d1_train + d1_valid + d2_valid
-
-                print("Final valid size: %d+%d=%d"%(len(d1_valid), len(d2_valid), len(valid_mixture)))
-
-            train_acc = BT.train_H(valid_mixture)
-
-            for d3 in d3_tasks:
-                args.D3 = d3
-
-                if d2 == d3:
-                    print (colored("Skipping, d2==d3", 'yellow'))
-                    continue
-
-                print ("Performing %s on %s vs. %s-%s"%(colored(method, 'green'), colored('NIHChest', 'blue'), colored(d2, 'red'), colored(d3, 'red')))
-
-                if has_done_before(method, 'NIHChest', d2, d3):
-                    print (colored("Skipped, has been done before.", 'yellow'))
-                    continue
-
-                ds3 = ds_cache[args.D3]
-
-                if not ds3.is_compatible(ds1):
-                    print ('%s is not compatible with %s, skipping.'
-                            %(colored(ds3.name, 'red'),
-                              colored(ds1.name, 'red')))
-                    continue
-
-                # Stage 3: Eval h on test data of d3
-                d1_test = ds1.get_D1_test()
-                d2_test = ds3.get_D2_test(ds1)
-
-                # Adjust the sizes.
-                d1_test_len = len(d1_test)
-                d2_test_len = len(d2_test)
-                final_len = min(d1_test_len, d2_test_len)
-                print("Adjusting %s and %s to %s"%(colored('D1=%d'%d1_test_len, 'red'),
-                                                colored('D2=%d'%d2_test_len, 'red'),
-                                                colored('Min=%d'%final_len, 'green')))
-                d1_test.trim_dataset(final_len)
-                d2_test.trim_dataset(final_len)
-                test_mixture = d1_test + d2_test
-                print("Final test size: %d+%d=%d"%(len(d1_test), len(d2_test), len(test_mixture)))
-
-                test_acc = BT.test_H(test_mixture)
-                results.append((method, 'NIHChest', d2, d3, BT.method_identifier(), train_acc, test_acc))
-
-                # Take a snapshot after each experiment.
+    for method in methods:
+        mt = Global.get_method(method, args)
+        if not all([has_done_before(method, 'NIHCC', 'CIFAR10', d3) for d3 in d3s]):
+            trainval_acc = train_subroutine(mt, D1, D2)
+        for d3, D3 in zip(d3s,D3s):
+            if not has_done_before(method, 'NIHCC', 'CIFAR10', d3):
+                test_acc, test_auroc = eval_subroutine(mt, D1, D3)
+                results['results'].append((method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc, test_acc, test_auroc))
                 torch.save(results, results_path)
 
-    for i, (m, ds, dm, dt, mi, a_train, a_test) in enumerate(results):
-        print ('%d\t%s\t%15s\t%-15s\t%.2f%% / %.2f%%'%(i, m, '%s-%s'%(ds, dm), dt, a_train*100, a_test*100))
+    for method in methods_64:
+        mt = Global.get_method(method, args)
+        if not all([has_done_before(method, 'NIHCC', 'CIFAR10', d3) for d3 in d3s]):
+            trainval_acc = train_subroutine(mt, D164, D2)
+        for d3, D3 in zip(d3s,D3s):
+            if not has_done_before(method, 'NIHCC', 'CIFAR10', d3):
+                test_acc, test_auroc = eval_subroutine(mt, D164, D3)
+                results['results'].append((method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc, test_acc, test_auroc))
+                torch.save(results, results_path)
+    # Usecase 3 Evaluation
+    D2 = NIHChestBinaryValSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
+    D3 = NIHChestBinaryTestSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
+
+    args.D2 = 'NIHChest'
+    for method in methods:
+        mt = Global.get_method(method, args)
+        if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
+            trainval_acc = train_subroutine(mt, D1, D2)
+        test_acc, test_auroc = eval_subroutine(mt, D1, D3)
+        results['results'].append((method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc, test_acc, test_auroc))
+        torch.save(results, results_path)
+
+    for method in methods_64:
+        mt = Global.get_method(method, args)
+        if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
+            trainval_acc = train_subroutine(mt, D164, D2)
+        test_acc, test_auroc = eval_subroutine(mt, D164, D3)
+        results['results'].append((method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc, test_acc, test_auroc))
+        torch.save(results, results_path)
+
+    for i, (m, ds, dm, dt, mi, a_train, a_test, auc_test) in enumerate(results['results']):
+        print ('%d\t%s\t%15s\t%-15s\t%.2f%% / %.2f%% - %.2f%%'%(i, m, '%s-%s'%(ds, dm), dt, a_train*100, a_test*100, auc_test*100))

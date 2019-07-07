@@ -94,7 +94,8 @@ class AbstractDomainInterface(object):
         P.S: I really hate the way python handles inheritence and abstractions.
     """
     def __init__(self, **kwargs):
-        self.name = self.__class__.__name__
+        if not 'name' in self.__dict__:
+            self.name = self.__class__.__name__
 
     """
         D1's are used for the reference datasets.

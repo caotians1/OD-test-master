@@ -36,9 +36,9 @@ class RTModelWrapper(AbstractModelWrapper):
     def calculate_loss(self, input, target):
         loss = None
         if self.loss_variant == 0:
-            loss = Fn.binary_cross_entropy_with_logits(input, target, size_average=False, reduce=False)
+            loss = Fn.binary_cross_entropy_with_logits(input, target, reduction='none')
         else:
-            loss = Fn.mse_loss(input, target, size_average=False, reduce=False)
+            loss = Fn.mse_loss(input, target, reduction='none')
 
         return loss.detach()
 
@@ -117,7 +117,7 @@ class ReconstructionThreshold(ProbabilityThreshold):
         hbest_path = path.join(home_path, 'model.best.pth')
         best_h_path = hbest_path
 
-        trainer = IterativeTrainer(config, self.args)
+        #trainer = IterativeTrainer(config, self.args)
 
         if not path.isfile(best_h_path):
             raise NotImplementedError("%s not found!, Please use setup_model to pretrain the networks first!"%best_h_path)
@@ -125,9 +125,9 @@ class ReconstructionThreshold(ProbabilityThreshold):
             print(colored('Loading H1 model from %s'%best_h_path, 'red'))
             config.model.load_state_dict(torch.load(best_h_path))
         
-        trainer.run_epoch(0, phase='all')
-        test_loss = config.logger.get_measure('all_loss').mean_epoch(epoch=0)
-        print("All average loss %s"%colored('%.4f'%(test_loss), 'red'))
+        #trainer.run_epoch(0, phase='all')
+        #test_loss = config.logger.get_measure('all_loss').mean_epoch(epoch=0)
+        #print("All average loss %s"%colored('%.4f'%(test_loss), 'red'))
 
         self.base_model = config.model
         self.base_model.eval()
@@ -199,6 +199,6 @@ class ReconstructionThreshold(ProbabilityThreshold):
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=0)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)
         config.logger = Logger()
-        config.max_epoch = 100
+        config.max_epoch = 30
 
         return config

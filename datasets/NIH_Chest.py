@@ -158,7 +158,8 @@ class NIHChestBase(data.Dataset):
 
 
 class NIHChest(AbstractDomainInterface):
-    name = "NIHCC"
+
+    dataset_path = "NIHCC"
     def __init__(self, root_path="./workspace/datasets/NIHCC", leave_out_classes=(), keep_in_classes=None,
                  binary=False, downsample=None, expand_channels=False, test_length=None, download=False,
                  extract=True):
@@ -167,6 +168,7 @@ class NIHChest(AbstractDomainInterface):
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
          is removed from indices..
         """
+        self.name = "NIHCC"
         super(NIHChest, self).__init__()
         self.leave_out_classes = leave_out_classes
         self.keep_in_classes = keep_in_classes
@@ -182,9 +184,8 @@ class NIHChest(AbstractDomainInterface):
                                             transforms.ToTensor()])
             self.image_size = (downsample, downsample)
         else:
-            transform = transforms.Compose([transforms.Resize((256, 256)),
-                                                  transforms.RandomCrop((224, 224)),
-                                                  transforms.ToTensor()])
+            transform = transforms.Compose([transforms.RandomCrop((224, 224)),
+                                            transforms.ToTensor()])
             self.image_size = (224, 224)
 
         self.ds_train = NIHChestBase(cache_path, source_path, "train", transforms=transform, binary=self.binary,
@@ -285,7 +286,6 @@ class NIHChestBinaryTest(NIHChest):
 
 
 class NIHChestBinaryTrainSplit(NIHChest):
-    name = "NIHCC"
     def __init__(self, *args, **kwargs):
         kwargs.update({'binary': True, 'test_length': 5000,
                           'leave_out_classes':['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']})
@@ -293,7 +293,6 @@ class NIHChestBinaryTrainSplit(NIHChest):
 
 
 class NIHChestBinaryValSplit(NIHChest):
-    name = "NIHCC"
     def __init__(self, *args, **kwargs):
         kwargs.update({'binary': True, 'test_length': 5000,
                        'keep_in_classes': ['Cardiomegaly',]})
@@ -301,7 +300,6 @@ class NIHChestBinaryValSplit(NIHChest):
 
 
 class NIHChestBinaryTestSplit(NIHChest):
-    name = "NIHCC"
     def __init__(self, *args, **kwargs):
         kwargs.update({'binary': True, 'test_length': 5000,
                        'keep_in_classes': ['Pneumothorax', 'Nodule', 'Mass']})

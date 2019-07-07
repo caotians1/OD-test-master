@@ -136,7 +136,7 @@ class AEKNNSVM(ScoreSVM):
             self.base_model.base_data = None
             self.base_model = None
 
-        # Set up the base-model
+        # Set up the base0-model
         if isinstance(self, BCEKNNSVM) or isinstance(self, MSEKNNSVM):
             base_model = Global.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
             if isinstance(self, BCEKNNSVM):

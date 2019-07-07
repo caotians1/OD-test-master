@@ -11,7 +11,7 @@ class STL10(AbstractDomainInterface):
         D1:    5,000 train + (4,000 valid + 4,000 test)
         D2:    5,000 valid + 8,000 test.
     """
-    name="stl10"
+    dataset_path="stl10"
     def __init__(self, downsample=None, root_path='./workspace/datasets/stl10', download=False, extract=False):
         super(STL10, self).__init__()
 

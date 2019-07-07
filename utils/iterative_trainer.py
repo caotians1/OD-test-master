@@ -4,9 +4,11 @@ import errno
 import timeit
 from tqdm import tqdm
 from termcolor import colored
+from sklearn.metrics import roc_curve, roc_auc_score
 
 import torch
 import torch.nn.functional as F
+
 from visdom import Visdom
 
 class IterativeTrainerConfig(object):
@@ -143,6 +145,9 @@ class IterativeTrainer(object):
                             logger.log('%s_accuracy'%phase_name, acc, epoch, i)
                             acc = acc/target.numel()
                         message = '%s Accuracy %.2f'%(message, acc)
+                        roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")
+                        logger.log('%s_AUROC'%phase_name, roc, epoch, i)
+                        message = '%s AUROC %.2f' % (message, roc)
 
                     pbar.set_description(message)
 

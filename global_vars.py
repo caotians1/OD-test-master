@@ -14,12 +14,14 @@ import datasets.noise as noise
 import datasets.STL as STL
 import datasets.TinyImagenet as TI
 import datasets.NIH_Chest as NC
+import datasets.MURA as MU
 
 all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         CIFAR.CIFAR10, CIFAR.CIFAR100,
                         STL.STL10, TI.TinyImagenet,
                         noise.UniformNoise, noise.NormalNoise,
-                        STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest, NC.NIHChestBinaryTrainSplit, NC.NIHChestBinaryValSplit, NC.NIHChestBinaryTestSplit]
+                        STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest,
+                        NC.NIHChestBinaryTrainSplit, NC.NIHChestBinaryValSplit, NC.NIHChestBinaryTestSplit, MU.MURA]
 
 """
     Not all the datasets can be used as a Dv, Dt (aka D2) for each dataset.
@@ -29,16 +31,17 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
 """
 d2_compatiblity = {
     # This can be used as d2 for            # this
-    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHChestBinary', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHCC', 'NIHCC', 'NIHChestBinaryTrainSplit'],
+    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
     'NIHChestBinary'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'],
-    'NIHChestBinaryTestSplit'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTrainSplit'],
+    'NIHCC'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC'],
     'NIHChestBinaryValSplit'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTrainSplit'],
+    'MURA'                                      :['NIHCC',]
     # STL10 is not compatible with CIFAR10 because of the 9-overlapping classes.
     # Erring on the side of caution.
 }
@@ -46,7 +49,7 @@ d2_compatiblity = {
 # We can augment the following training data with mirroring.
 # We make sure there's no information leak in-between tasks.
 mirror_augment = {
-    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinary', 'NIHChestBinaryTrainSplit'
+    'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTrainSplit'
 }
 
 """
@@ -56,6 +59,7 @@ mirror_augment = {
 import models.classifiers as CLS
 import models.autoencoders as AES
 import models.pixelcnn.model as PCNN
+import models.ALImodel as ALI
 
 class ModelFactory(object):
     def __init__(self, parent_class, **kwargs):
@@ -76,9 +80,7 @@ dataset_reference_classifiers = {
     'CIFAR100':               [CLS.CIFAR100_VGG,      CLS.CIFAR100_Resnet],
     'STL10':                  [CLS.STL10_VGG,         CLS.STL10_Resnet],
     'TinyImagenet':           [CLS.TinyImagenet_VGG,  CLS.TinyImagenet_Resnet],
-    'NIHChestBinary':         [CLS.NIHDenseBinary, ModelFactory(CLS.NIHDenseBinary, train_features=True), CLS.NIHChestVGG],
-    'NIHChestBinaryTest': [CLS.NIHDenseBinary, ModelFactory(CLS.NIHDenseBinary, train_features=True), CLS.NIHChestVGG],
-    'NIHChestBinaryTrainSplit': [CLS.NIHDenseBinary, CLS.NIHChestVGG],
+    'NIHCC': [CLS.NIHDenseBinary, CLS.NIHChestVGG],
 }
 
 
@@ -90,7 +92,7 @@ dataset_reference_autoencoders = {
     'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
-    'NIHChestBinaryTrainSplit': [ModelFactory(AES.Generic_AE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+    'NIHCC': [ModelFactory(AES.Generic_AE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_vaes = {
@@ -100,6 +102,10 @@ dataset_reference_vaes = {
     'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+}
+
+dataset_reference_ALI = {
+                         'NIHCC': [ModelFactory(ALI.ALIModel, dims=(1, 64, 64), n_hidden=512)],
 }
 
 dataset_reference_pcnns = {
@@ -126,6 +132,7 @@ import methods.odin as ODIN
 import methods.reconstruction_error as RE
 import methods.pixelcnn as PCNN
 import methods.openmax as OM
+import methods.ALI as ALI
 
 all_methods = {
     'prob_threshold':   BT.ProbabilityThreshold,
@@ -142,6 +149,7 @@ all_methods = {
     'reconst_thresh':   RE.ReconstructionThreshold,
     'pixelcnn':         PCNN.PixelCNN,
     'openmax':          OM.OpenMax,
+    'ALI_reconst':      ALI.ALIReconstruction
 }
 
 ##################################################################
@@ -171,6 +179,11 @@ def get_ref_autoencoder(dataset):
 def get_ref_vae(dataset):
     if dataset in dataset_reference_vaes:
         return dataset_reference_vaes[dataset]
+    raise NotImplementedError()
+
+def get_ref_ali(dataset):
+    if dataset in dataset_reference_ALI:
+        return dataset_reference_ALI[dataset]
     raise NotImplementedError()
 
 def get_ref_pixelcnn(dataset):
