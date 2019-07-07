@@ -12,10 +12,10 @@ from utils.args import args
 
 import categories.classifier_setup as CLSetup
 from models.classifiers import NIHDenseBinary, NIHChestVGG
-from datasets.NIH_Chest import NIHChest
+from datasets.NIH_Chest import NIHChestBinaryTrainSplit
 
 if __name__ == "__main__":
-    dataset = NIHChest(root_path=os.path.join(args.root_path, "NIHCC"), binary=True, downsample=64)
+    dataset = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "NIHCC"), binary=True)
     model = NIHChestVGG()
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train())
 

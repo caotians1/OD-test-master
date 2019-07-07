@@ -529,13 +529,13 @@ class NIHChestVGG(nn.Module):
         #self.multiplier = 4.42477
 
         self.cfg = [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M']
-        self.model = VGG.VGG(VGG.make_layers(self.cfg, batch_norm=True), num_classes=200)
+        self.model = VGG.VGG(VGG.make_layers(self.cfg, batch_norm=True), num_classes=2)
         # TinyImagenet would have a different sized feature map.
-        self.model.classifier = nn.Sequential(
-            nn.Linear(512 * 2 * 2, 4096), nn.ReLU(True), nn.Dropout(),
-            nn.Linear(4096, 4096), nn.ReLU(True), nn.Dropout(),
-            nn.Linear(4096, 2),
-        )
+        #self.model.classifier = nn.Sequential(
+        #    nn.Linear(512 * 2 * 2, 4096), nn.ReLU(True), nn.Dropout(),
+        #    nn.Linear(4096, 4096), nn.ReLU(True), nn.Dropout(),
+        #    nn.Linear(4096, 2),
+        #)
         self.model._initialize_weights()
 
     def forward(self, x, softmax=True):
