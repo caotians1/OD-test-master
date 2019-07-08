@@ -61,8 +61,8 @@ class BinaryClassifier(ProbabilityThreshold):
 
         # Initialize the multi-threaded loaders.
         train_loader = DataLoader(train_ds, batch_size=self.args.batch_size, shuffle=True, num_workers=self.args.workers, pin_memory=True, drop_last=True)
-        valid_loader = DataLoader(valid_ds, batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
-        all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
+        valid_loader = DataLoader(valid_ds, batch_size=self.args.batch_size, shuffle=True,num_workers=self.args.workers, pin_memory=True)
+        all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, shuffle=True, num_workers=self.args.workers, pin_memory=True)
 
         # Set up the criterion
         criterion = nn.BCEWithLogitsLoss().cuda()
@@ -109,12 +109,14 @@ class BinaryClassifier(ProbabilityThreshold):
         return config
 
     def propose_H(self, dataset):
-        raise NotImplementedError("You know, you're not supposed to treat me like this!")
+        return
+        #raise NotImplementedError("You know, you're not supposed to treat me like this!")
 
     def train_H(self, dataset):
         # Wrap the (mixture)dataset in SubDataset so to easily
         # split it later. God knows how many wrappers we have by this point.
         from datasets import SubDataset
+        self.args.batch_size = 64
         dataset = SubDataset('%s-%s'%(self.args.D1, self.args.D2), dataset, torch.arange(len(dataset)).int())
 
         h_path = path.join(self.args.experiment_path, '%s'%(self.__class__.__name__),

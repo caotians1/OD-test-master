@@ -102,6 +102,7 @@ dataset_reference_vaes = {
     'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+    'NIHCC':                [ModelFactory(AES.Generic_VAE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_ALI = {

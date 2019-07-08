@@ -125,7 +125,7 @@ class OTModelWrapper(AbstractModelWrapper):
         base_output = self.base_model(x, softmax=False)
 
         n_instances, n_classes = base_output.size()
-        alpharank = self.alpharank
+        alpharank = min(self.alpharank, n_classes)
 
         output = base_output.new(n_instances, n_classes + 1).fill_(0)
         for i in range(n_instances):

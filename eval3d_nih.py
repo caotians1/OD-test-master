@@ -72,23 +72,23 @@ RESULTS_VER = 0
 if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
-    methods = ['mcdropout/0',
-               'prob_threshold/0',    'prob_threshold/1',
-               'score_svm/0',          'score_svm/1',
-               'openmax/0',            'openmax/1',
-               'binclass/0',           'binclass/1',
-               'odin/0',               'odin/1',
+    methods = [
+               'prob_threshold/0',  #  'prob_threshold/1',
+               'score_svm/0',          #'score_svm/1',
+               'openmax/0',            #'openmax/1',
+               'binclass/0',           #'binclass/1',
+               'odin/0',               #'odin/1',
 
 
         ]
     methods_64 = [
-         'reconst_thresh/0',     'reconst_thresh/1',
-         'ALI_reconst/0', 'ALI_reconst/1', 'ALI_reconst/0',
+         'reconst_thresh/0',   #  'reconst_thresh/1',
+         'ALI_reconst/0', 'ALI_reconst/1', #'ALI_reconst/0',
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
-         'bceaeknn/1', 'vaeaeknn/1', 'mseaeknn/1',
-         'bceaeknn/2', 'vaeaeknn/2', 'mseaeknn/2',
-         'bceaeknn/4', 'vaeaeknn/4', 'mseaeknn/4',
-         'bceaeknn/8', 'vaeaeknn/8', 'mseaeknn/8',
+          'vaeaeknn/1', 'mseaeknn/1',#'bceaeknn/1',
+          'vaeaeknn/2', 'mseaeknn/2', #'bceaeknn/2',
+          'vaeaeknn/4', 'mseaeknn/4', #'bceaeknn/4',
+          'vaeaeknn/8', 'mseaeknn/8', #'bceaeknn/8',
     ]
 
     D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     args.D1 = 'NIHCC'
 
     # Usecase 1 Evaluation
-    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'NIHCC'))
+    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'CIFAR10'))
     args.D2 = "CIFAR10"
     d3s = ['UniformNoise',
            'NormalNoise',
@@ -111,27 +111,27 @@ if __name__ == '__main__':
     D3s=[]
     for d3 in d3s:
         dataset = Global.all_datasets[d3]
-        if dataset.dataset_path is not None:
+        if 'dataset_path' in dataset.__dict__:
             D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
         else:
             D3s.append(dataset())
 
     for method in methods:
         mt = Global.get_method(method, args)
-        if not all([has_done_before(method, 'NIHCC', 'CIFAR10', d3) for d3 in d3s]):
+        if not all([has_done_before(method, 'NIHCC', 'CIFAR', d3) for d3 in d3s]):
             trainval_acc = train_subroutine(mt, D1, D2)
         for d3, D3 in zip(d3s,D3s):
-            if not has_done_before(method, 'NIHCC', 'CIFAR10', d3):
+            if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
                 test_acc, test_auroc = eval_subroutine(mt, D1, D3)
                 results['results'].append((method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc, test_acc, test_auroc))
                 torch.save(results, results_path)
 
     for method in methods_64:
         mt = Global.get_method(method, args)
-        if not all([has_done_before(method, 'NIHCC', 'CIFAR10', d3) for d3 in d3s]):
+        if not all([has_done_before(method, 'NIHCC', 'CIFAR', d3) for d3 in d3s]):
             trainval_acc = train_subroutine(mt, D164, D2)
         for d3, D3 in zip(d3s,D3s):
-            if not has_done_before(method, 'NIHCC', 'CIFAR10', d3):
+            if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
                 test_acc, test_auroc = eval_subroutine(mt, D164, D3)
                 results['results'].append((method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc, test_acc, test_auroc))
                 torch.save(results, results_path)
