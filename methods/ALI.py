@@ -13,7 +13,7 @@ from utils.logger import Logger
 
 from methods import AbstractMethodInterface, AbstractModelWrapper, SVMLoss
 from methods.base_threshold import ProbabilityThreshold
-from reconstruction_error import ReconstructionThreshold
+from methods.reconstruction_error import ReconstructionThreshold
 from datasets import MirroredDataset
 import global_vars as Global
 from models.ALImodel import ALIModel

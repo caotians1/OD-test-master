@@ -12,9 +12,8 @@ if __name__ == "__main__":
 
     for dataset in Global.all_dataset_classes:
         if 'dataset_path' in dataset.__dict__:
-            print("working on ", dataset.name)
             try:
                 set = dataset(root_path=os.path.join(CACHE_PATH, dataset.dataset_path), download=False, extract=True)
             except RuntimeError:
                 pass
-            print("complete ", dataset.name)
+            print("complete ", dataset.dataset_path)
