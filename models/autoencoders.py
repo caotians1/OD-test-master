@@ -9,6 +9,103 @@ import math
     The q(x|z)-decoder is a bernoulli distribution rather than a Gaussian.
 """
 
+
+class ELU_BatchNorm2d(torch.nn.Module):
+
+    def __init__(self, filters):
+        super(ELU_BatchNorm2d, self).__init__()
+        self.bn = torch.nn.BatchNorm2d(filters)
+
+    def forward(self, x):
+        return self.bn(F.elu(x))
+
+
+class ResidualBlock(torch.nn.Module):
+    def __init__(self, filters_in, filters_out, kernel_size):
+        super(ResidualBlock, self).__init__()
+        self.ops = torch.nn.Sequential(*[
+            torch.nn.Conv2d(filters_in, filters_out, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=False),
+            ELU_BatchNorm2d(filters_out),
+            torch.nn.Conv2d(filters_out, filters_out, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=False),
+            ELU_BatchNorm2d(filters_out)
+        ])
+
+    def forward(self, x):
+        return x + self.ops(x)
+
+
+class Residual_AE(nn.Module):
+    def __init__(self, dims, max_channels=512, depth=10, n_hidden=256):
+        assert len(dims) == 3, 'Please specify 3 values for dims'
+        super(Residual_AE, self).__init__()
+
+        kernel_size = 3
+        all_channels = []
+        current_channels = 64
+        self.epoch_factor = max(1, n_hidden//256)
+        self.default_sigmoid = False
+        downsampling_layers = [i%2==0 for i in range(depth)]
+        self.netid = 'max.%d.d.%d.nH.%d'%(max_channels, depth, n_hidden)
+
+        # encoder ###########################################
+        modules = []
+        in_channels = dims[0]
+        in_spatial_size = dims[1]
+        for i in range(depth):
+            modules.append(ResidualBlock(in_channels, current_channels, kernel_size))
+            in_channels = current_channels
+            all_channels.append(current_channels)
+            if downsampling_layers[i]:
+                modules.append(torch.nn.Conv2d(current_channels, current_channels, kernel_size=kernel_size, stride=2, bias=False))
+                modules.append(ELU_BatchNorm2d(current_channels))
+                current_channels = min(current_channels * 2, max_channels)
+                in_spatial_size = math.floor(in_spatial_size/2)
+
+        # Final layer
+        modules.append(nn.Conv2d(in_channels, n_hidden, kernel_size=kernel_size, padding=(kernel_size-1)//2, bias=False))
+        modules.append(ELU_BatchNorm2d(n_hidden))
+        self.encoder = nn.Sequential(*modules)
+
+        # decoder ###########################################
+        modules = []
+        in_channels = n_hidden
+        current_index = len(all_channels)-1
+        for i in range(depth):
+            modules.append(ResidualBlock(in_channels, all_channels[current_index], kernel_size))
+            modules.append(ELU_BatchNorm2d(all_channels[current_index]))
+            if downsampling_layers[i]:
+                modules.append(torch.nn.ConvTranspose2d(all_channels[current_index], all_channels[current_index], kernel_size=kernel_size, stride=2, bias=False))
+
+            in_channels = all_channels[current_index]
+            current_index -= 1
+        # Final layer
+        modules.append(nn.Conv2d(in_channels, dims[0], kernel_size=kernel_size, padding=(kernel_size-1)//2, bias=False))
+        self.decoder = nn.Sequential(*modules)
+
+    def encode(self, x):
+        n_samples = x.size(0)
+        code = self.encoder(x)
+        out = code.view(n_samples, -1)  # flatten to vectors.
+        return out
+
+    def forward(self, x, sigmoid=False):
+        enc = self.encoder(x)
+        dec = self.decoder(enc)
+        if sigmoid or self.default_sigmoid:
+            dec = F.sigmoid(dec)
+        return dec
+
+    def train_config(self):
+        config = {}
+        config['optim']     = optim.Adam(self.parameters(), lr=1e-3)
+        config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-3, min_lr=1e-6, factor=0.1, verbose=True)
+        config['max_epoch'] = 240 * self.epoch_factor
+        return config
+
+    def preferred_name(self):
+        return self.__class__.__name__+"."+self.netid
+
+
 class Generic_AE(nn.Module):
     def __init__(self, dims, max_channels=512, depth=10, n_hidden=256):
         assert len(dims) == 3, 'Please specify 3 values for dims'
