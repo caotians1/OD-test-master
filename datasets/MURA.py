@@ -75,10 +75,12 @@ class MURABase(data.Dataset):
         with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
             csvf = csv.DictReader(fp, ['Image Path', ])
             for row in csvf:
-                imp = osp.join(self.source_dir, row['Image Path'][10:])
+                raw_path = row['Image Path'].split('/')[2:]
+                imp = osp.join(self.source_dir, self.image_dir, *raw_path)
+
                 if osp.exists(imp):
                     #add subpath after 'train' or 'valid' and image name to img_list
-                    img_list.append('/'.join(row['Image Path'][10:].split('/')[1:]))
+                    img_list.append(osp.join(*row['Image Path'].split('/')[2:]))
                     label = [0, 1] if 'positive' in row['Image Path'] else [1, 0]
                     label_list.append(label)
         label_tensors = torch.LongTensor(label_list)

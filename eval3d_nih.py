@@ -96,7 +96,7 @@ if __name__ == '__main__':
     args.D1 = 'NIHCC'
 
     # Usecase 1 Evaluation
-    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'CIFAR10'))
+    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
     args.D2 = "CIFAR10"
     d3s = ['UniformNoise',
            'NormalNoise',
@@ -112,6 +112,7 @@ if __name__ == '__main__':
     for d3 in d3s:
         dataset = Global.all_datasets[d3]
         if 'dataset_path' in dataset.__dict__:
+            print(os.path.join(args.root_path, dataset.dataset_path))
             D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
         else:
             D3s.append(dataset())

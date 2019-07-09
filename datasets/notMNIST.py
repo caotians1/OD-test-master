@@ -137,7 +137,7 @@ class NotMNIST(AbstractDomainInterface):
         D1: not defined.
         D2: 9362 Valid, 9362 Test. (indices chosen at random)
     """
-    name="notmnist"
+    dataset_path="notmnist"
     def __init__(self, root_path='./workspace/datasets/notmnist', download=False, extract=False):
         super(NotMNIST, self).__init__()
         
