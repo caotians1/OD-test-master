@@ -4,14 +4,14 @@ from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
+import numpy as np
 from torch.utils.data import DataLoader
 from utils.iterative_trainer import IterativeTrainerConfig, IterativeTrainer
 from utils.logger import Logger
 import os
 from os import path
 from termcolor import colored
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, average_precision_score
 
 from methods import AbstractMethodInterface, AbstractModelWrapper, SVMLoss
 from datasets import MirroredDataset
@@ -275,7 +275,9 @@ class ProbabilityThreshold(AbstractMethodInterface):
         correct = 0.0
         total_count = 0
         self.H_class.eval()
-        weighted_AUROC = 0.0
+        #weighted_AUROC = 0.0
+        pred_aggregate = []
+        y_aggregate = []
         with tqdm(total=len(dataset)) as pbar:
             for i, (image, label) in enumerate(dataset):
                 pbar.update()
@@ -284,9 +286,11 @@ class ProbabilityThreshold(AbstractMethodInterface):
                 input, target = image.to(self.args.device), label.to(self.args.device)
 
                 prediction = self.H_class(input)
+                pred_aggregate.append(prediction.data.cpu().view(-1).numpy())
+                y_aggregate.append(target.data.cpu().numpy())
                 classification = self.H_class.classify(prediction)
-                roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")
-                weighted_AUROC += roc * len(input)
+                #roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")
+                #weighted_AUROC += roc * len(input)
 
                 correct += (classification.detach().view(-1) == target.detach().view(-1).long()).float().view(-1).sum()
                 total_count += len(input)
@@ -305,6 +309,11 @@ class ProbabilityThreshold(AbstractMethodInterface):
                 #     visdom.images(s2.cpu().numpy(), win='out_images')                                    
         
         test_average_acc = correct/total_count
-        average_auroc = weighted_AUROC/total_count
-        print("Final Test average accuracy %s, AUROC %s"%(colored('%.4f%%'%(test_average_acc*100),'red'), colored('%.4f%%'%(average_auroc*100),'green')))
-        return test_average_acc.item(), average_auroc
+        target = np.concatenate(y_aggregate, axis=-1)
+        prediction = np.concatenate(pred_aggregate, axis=-1)
+        fpr, tpr, thresholds = roc_curve(target, prediction)
+        precision, recall, pr_thresholds = precision_recall_curve(target, prediction)
+        auprc = average_precision_score(target, prediction)
+        auroc = roc_auc_score(target, prediction)
+        print("Final Test average accuracy %s, AUROC %s, AUPRC %s"%(colored('%.4f%%'%(test_average_acc*100),'red'), colored('%.4f%%'%(auroc*100),'green'), colored('%.4f%%'%(auprc*100),'blue')))
+        return test_average_acc.item(), auroc, auprc, fpr, tpr, precision, recall

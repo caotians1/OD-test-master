@@ -14,5 +14,5 @@ from datasets.NIH_Chest import NIHChestBinaryTrainSplit
 if __name__ == "__main__":
     dataset = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "NIHCC"), binary=True, expand_channels=False, downsample=64)
     model = Generic_VAE(dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)
-    AESetup.train_variational_autoencoder(args, model=model, dataset=dataset.get_D1_train())
+    AESetup.train_variational_autoencoder(args, model=model, dataset=dataset.get_D1_train(), BCE_Loss=False)
 

@@ -15,8 +15,8 @@ cp -r ~/Venv/temp/* $SLURM_TMPDIR/env/temp
 cp -r  ~/projects/rpp-bengioy/caotians/data/* $SLURM_TMPDIR/data
 
 mkdir -p $SLURM_TMPDIR/data/NIHCC/images_224
-
 tar -xzf $SLURM_TMPDIR/data/NIHCC/images_224.tar.gz -C $SLURM_TMPDIR/data/NIHCC/images_224 --strip-components=1
+tar -xzf $SLURM_TMPDIR/data/MURA/images_224.tar.gz -C $SLURM_TMPDIR/data/MURA
 
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
