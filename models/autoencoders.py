@@ -221,15 +221,19 @@ class Generic_VAE(Generic_AE):
         return dec
 
 class VAE_Loss(nn.Module):
-    def __init__(self, VAE_model):
+    def __init__(self, VAE_model, BCE):
         super(VAE_Loss, self).__init__()
         assert VAE_model.__class__ == Generic_VAE, 'Only Generic_VAEs are accepted.'
         self.VAE = VAE_model
         self.size_average = True
         self.reduction = 'sum'
-        self.BCE = nn.BCELoss(size_average=False)
+        if BCE:
+            self.loss = nn.BCELoss(size_average=False)
+        else:
+            self.loss = nn.MSELoss(size_average=False)
+
     def forward(self, X, Y):
-        BCE_loss = self.BCE(X, Y)
+        BCE_loss = self.loss(X, Y)
         mu, logvar = self.VAE.last_mu, self.VAE.last_std
         KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
         return (BCE_loss + KLD)/X.numel()

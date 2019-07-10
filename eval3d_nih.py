@@ -2,12 +2,16 @@ from __future__ import print_function
 
 import os
 from termcolor import colored
+import numpy as np
 import torch
 
 from utils.args import args
 import global_vars as Global
 from datasets.NIH_Chest import NIHChestBinaryTrainSplit, NIHChestBinaryValSplit, NIHChestBinaryTestSplit
 from models.ALImodel import *
+import matplotlib as mpl
+mpl.rcParams['text.antialiased']=False
+import matplotlib.pyplot as plt
 
 def train_subroutine(ODmethod, D1, D2):
     d1_train = D1.get_D1_train()
@@ -43,8 +47,43 @@ def eval_subroutine(ODmethod, D1, D3):
     test_mixture = d1_test + d3_test
     print("Final test size: %d+%d=%d" % (len(d1_test), len(d3_test), len(test_mixture)))
 
-    test_acc, test_auroc = ODmethod.test_H(test_mixture)
-    return test_acc, test_auroc
+    acc, auroc, auprc, fpr, tpr, precision, recall = ODmethod.test_H(test_mixture)
+    fig = plt.figure()
+    lw = 2
+    ax = fig.add_subplot(111)
+    ax.plot(fpr, tpr, color='g',
+             lw=lw, label='ROC curve (area = %0.2f)' % auroc)
+    ax.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    ax.axes.set_xlim([0.0, 1.0])
+    ax.axes.set_ylim([0.0, 1.05])
+    ax.axes.set_xlabel('False Positive Rate')
+    ax.axes.set_ylabel('True Positive Rate')
+    ax.axes.legend(loc="lower right")
+    plt.setp([ax.get_xticklines() + ax.get_yticklines() + ax.get_xgridlines() + ax.get_ygridlines()], antialiased=False)
+    fig.canvas.draw()
+
+    # Now we can save it to a numpy array.
+    ROC = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    ROC = ROC.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+
+    fig = plt.figure()
+    lw = 2
+    ax = fig.add_subplot(111)
+    ax.plot(recall, precision, color='b',
+            lw=lw, label='P-R curve (AP = %0.2f)' % auprc)
+    ax.axes.set_xlim([0.0, 1.0])
+    ax.axes.set_ylim([0.0, 1.05])
+    ax.axes.set_xlabel('Recall')
+    ax.axes.set_ylabel('Precision')
+    ax.axes.legend(loc="lower left")
+    plt.setp([ax.get_xticklines() + ax.get_yticklines() + ax.get_xgridlines() + ax.get_ygridlines()], antialiased=False)
+    fig.canvas.draw()
+
+    # Now we can save it to a numpy array.
+    PRC = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+    PRC = PRC.reshape(fig.canvas.get_width_height()[::-1] + (3,))
+
+    return acc, auroc, auprc, ROC, PRC, fpr, tpr, precision, recall
 
 
 def init_and_load_results(path, args):
@@ -62,13 +101,13 @@ def init_and_load_results(path, args):
 
 
 def has_done_before(method, d1, d2, d3):
-    for m, ds, dm, dt, mid, a1, a2, a3 in results['results']:
-        if m == method and ds == d1 and dm == d2 and dt == d3:
+    for res in results['results']:
+        if res[0] == method and res[1] == d1 and res[2] == d2 and res[3] == d3:
             return True
     return False
 
 
-RESULTS_VER = 0
+RESULTS_VER = 1
 if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
@@ -96,7 +135,7 @@ if __name__ == '__main__':
     args.D1 = 'NIHCC'
 
     # Usecase 1 Evaluation
-    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'CIFAR10'))
+    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
     args.D2 = "CIFAR10"
     d3s = ['UniformNoise',
            'NormalNoise',
@@ -112,6 +151,7 @@ if __name__ == '__main__':
     for d3 in d3s:
         dataset = Global.all_datasets[d3]
         if 'dataset_path' in dataset.__dict__:
+            print(os.path.join(args.root_path, dataset.dataset_path))
             D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
         else:
             D3s.append(dataset())
@@ -122,8 +162,8 @@ if __name__ == '__main__':
             trainval_acc = train_subroutine(mt, D1, D2)
         for d3, D3 in zip(d3s,D3s):
             if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
-                test_acc, test_auroc = eval_subroutine(mt, D1, D3)
-                results['results'].append((method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc, test_acc, test_auroc))
+                test_results = eval_subroutine(mt, D1, D3)
+                results['results'].append([method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + test_results)
                 torch.save(results, results_path)
 
     for method in methods_64:
@@ -132,8 +172,9 @@ if __name__ == '__main__':
             trainval_acc = train_subroutine(mt, D164, D2)
         for d3, D3 in zip(d3s,D3s):
             if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
-                test_acc, test_auroc = eval_subroutine(mt, D164, D3)
-                results['results'].append((method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc, test_acc, test_auroc))
+                test_results = eval_subroutine(mt, D164, D3)
+                results['results'].append(
+                    [method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + test_results)
                 torch.save(results, results_path)
     # Usecase 3 Evaluation
     D2 = NIHChestBinaryValSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
@@ -144,17 +185,20 @@ if __name__ == '__main__':
         mt = Global.get_method(method, args)
         if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
             trainval_acc = train_subroutine(mt, D1, D2)
-        test_acc, test_auroc = eval_subroutine(mt, D1, D3)
-        results['results'].append((method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc, test_acc, test_auroc))
+        test_results = eval_subroutine(mt, D1, D3)
+        results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
+                                    + test_results)
+
         torch.save(results, results_path)
 
     for method in methods_64:
         mt = Global.get_method(method, args)
         if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
             trainval_acc = train_subroutine(mt, D164, D2)
-        test_acc, test_auroc = eval_subroutine(mt, D164, D3)
-        results['results'].append((method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc, test_acc, test_auroc))
+        test_results = eval_subroutine(mt, D164, D3)
+        results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
+                                  + test_results)
         torch.save(results, results_path)
 
-    for i, (m, ds, dm, dt, mi, a_train, a_test, auc_test) in enumerate(results['results']):
+    for i, (m, ds, dm, dt, mi, a_train, a_test, auc_test, AP_test, ROC, PRC, fpr, tpr, precision, recall) in enumerate(results['results']):
         print ('%d\t%s\t%15s\t%-15s\t%.2f%% / %.2f%% - %.2f%%'%(i, m, '%s-%s'%(ds, dm), dt, a_train*100, a_test*100, auc_test*100))

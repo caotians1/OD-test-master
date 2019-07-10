@@ -76,7 +76,7 @@ def get_ae_config(args, model, dataset, BCE_Loss):
 
     return config
 
-def get_vae_config(args, model, dataset):
+def get_vae_config(args, model, dataset, BCE_Loss):
     print("Preparing training D1 for %s"%(dataset.name))
 
     # 80%, 20% for local train+test
@@ -96,7 +96,8 @@ def get_vae_config(args, model, dataset):
     model = model.to(args.device)
 
     # Set up the criterion
-    criterion = VAE_Loss(model)
+
+    criterion = VAE_Loss(model, BCE_Loss)
 
     # Set up the config
     config = IterativeTrainerConfig()
@@ -199,7 +200,11 @@ def train_autoencoder(args, model, dataset, BCE_Loss):
     else:
         print("Skipping %s"%(colored(home_path, 'yellow')))
 
-def train_variational_autoencoder(args, model, dataset):
+def train_variational_autoencoder(args, model, dataset, BCE_Loss=True):
+    if BCE_Loss:
+        model.netid = "BCE." + model.netid
+    else:
+        model.netid = "MSE." + model.netid
     home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset.name, model_setup=True, suffix_str=model.netid)
     hbest_path = os.path.join(home_path, 'model.best.pth')
     hlast_path = os.path.join(home_path, 'model.last.pth')
@@ -208,7 +213,7 @@ def train_variational_autoencoder(args, model, dataset):
         os.makedirs(home_path)
 
     if not os.path.isfile(hbest_path+".done"):
-        config = get_vae_config(args, model, dataset)
+        config = get_vae_config(args, model, dataset, BCE_Loss)
         trainer = IterativeTrainer(config, args)
         print(colored('Training from scratch', 'green'))
         best_loss = 999999999
@@ -254,103 +259,3 @@ def train_variational_autoencoder(args, model, dataset):
             trainer.visdom.save([trainer.visdom.env])
     else:
         print("Skipping %s"%(colored(home_path, 'yellow')))
-
-def train_ALI(args, model, dataset):
-    model.netid = "ALI." + model.netid
-
-    home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset.name, model_setup=True,
-                                          suffix_str=model.netid)
-    hbest_paths = os.path.join(home_path, 'model.best.pth')
-    hlast_paths = os.path.join(home_path, 'model.last.pth')
-
-    if not os.path.isdir(home_path):
-        os.makedirs(home_path)
-
-    if not os.path.isfile(hbest_path + ".done"):
-        config = get_ae_config(args, model, dataset, BCE_Loss=BCE_Loss)
-        trainer = IterativeTrainer(config, args)
-        print(colored('Training from scratch', 'green'))
-        best_loss = 999999999
-        for epoch in range(1, config.max_epoch + 1):
-
-            # Track the learning rates.
-            lrs = [float(param_group['lr']) for param_group in config.optim.param_groups]
-            config.logger.log('LRs', lrs, epoch)
-            config.logger.get_measure('LRs').legend = ['LR%d' % i for i in range(len(lrs))]
-
-            # One epoch of train and test.
-            trainer.run_epoch(epoch, phase='train')
-            trainer.run_epoch(epoch, phase='test')
-
-            train_loss = config.logger.get_measure('train_loss').mean_epoch()
-            test_loss = config.logger.get_measure('test_loss').mean_epoch()
-
-            config.scheduler.step(train_loss)
-
-            if config.visualize:
-                # Show the average losses for all the phases in one figure.
-                config.logger.visualize_average_keys('.*_loss', 'Average Loss', trainer.visdom)
-                config.logger.visualize_average_keys('.*_accuracy', 'Average Accuracy', trainer.visdom)
-                config.logger.visualize_average('LRs', trainer.visdom)
-
-            # Save the logger for future reference.
-            torch.save(config.logger.measures, os.path.join(home_path, 'logger.pth'))
-
-            # Saving a checkpoint. Enable if needed!
-            # if args.save and epoch % 10 == 0:
-            #     print('Saving a %s at iter %s'%(colored('snapshot', 'yellow'), colored('%d'%epoch, 'yellow')))
-            #     torch.save(config.model.state_dict(), os.path.join(home_path, 'model.%d.pth'%epoch))
-
-            if args.save and test_loss < best_loss:
-                print('Updating the on file model with %s' % (colored('%.4f' % test_loss, 'red')))
-                best_loss = test_loss
-                torch.save(config.model.state_dict(), hbest_path)
-
-        torch.save({'finished': True}, hbest_path + ".done")
-        torch.save(config.model.state_dict(), hlast_path)
-
-        if config.visualize:
-            trainer.visdom.save([trainer.visdom.env])
-    else:
-        print("Skipping %s" % (colored(home_path, 'yellow')))
-
-    # Generate Fake data from random Latent
-    FakeX = GenX(FakeZ)
-
-    # Generate Latent from Real
-    RealZ = GenZ(Xnorm)
-
-    # Have discriminator do is thing on real and fake data
-    RealCat = torch.cat((DisZ(RealZ), DisX(Xnorm)), 1)
-    FakeCat = torch.cat((DisZ(FakeZ), DisX(FakeX)), 1)
-    PredReal = DisXZ(RealCat)
-    PredFalse = DisXZ(FakeCat)
-
-    # Gen fake and true label
-    TrueLabel = Variable(torch.ones(BS) - 0.1)  # -0.1 is a trick from the internet
-    FakeLabel = Variable(torch.zeros(BS))
-
-    if opt.RandomLabel == True:
-        TrueLabel = (torch.randint(low=70, high=110, size=(1, BS))[0] / 100)
-        FakeLabel = (torch.randint(low=-10, high=30, size=(1, BS))[0] / 100)
-
-    if torch.cuda.is_available():
-        TrueLabel = TrueLabel.cuda()
-        FakeLabel = FakeLabel.cuda()
-    # Get loss for discriminator
-    loss_d = criterion(PredReal.view(-1), TrueLabel) + criterion(PredFalse.view(-1), FakeLabel)
-
-    # Get loss for generator
-    loss_g = criterion(PredFalse.view(-1), TrueLabel) + criterion(PredReal.view(-1), FakeLabel)
-
-    # Optimize Discriminator
-    optimizerD.zero_grad()
-    loss_d.backward(retain_graph=True)
-    optimizerD.step()
-    # Optimize Generator
-    if loss_d > opt.MaxLoss:
-        print("Gen is tooooo good:%.2f, No BackProp" % (loss_d.cpu().detach().numpy() + 0))
-    else:
-        optimizerG.zero_grad()
-        loss_g.backward()
-        optimizerG.step()
