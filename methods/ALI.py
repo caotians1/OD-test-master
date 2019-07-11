@@ -69,7 +69,10 @@ class ALIReconstruction(ReconstructionThreshold):
 
         import models as Models
 
-        config.model.netid = "BCE." + config.model.netid
+        if self.default_model == 0:
+            config.model.netid = "BCE." + config.model.netid
+        else:
+            config.model.netid = "MSE." + config.model.netid
 
 
         home_path = Models.get_ref_model_path(self.args, config.model.__class__.__name__, dataset.name,

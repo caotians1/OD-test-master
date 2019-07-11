@@ -315,5 +315,5 @@ class ProbabilityThreshold(AbstractMethodInterface):
         precision, recall, pr_thresholds = precision_recall_curve(target, prediction)
         auprc = average_precision_score(target, prediction)
         auroc = roc_auc_score(target, prediction)
-        print("Final Test average accuracy %s, AUROC %s, AUPRC %s"%(colored('%.4f%%'%(test_average_acc*100),'red'), colored('%.4f%%'%(auroc*100),'green'), colored('%.4f%%'%(auprc*100),'blue')))
+        print("Final Test average accuracy %s, AUROC %s, AP %s"%(colored('%.4f%%'%(test_average_acc*100),'red'), colored('%.4f%%'%(auroc*100),'green'), colored('%.4f%%'%(auprc*100),'blue')))
         return test_average_acc.item(), auroc, auprc, fpr, tpr, precision, recall

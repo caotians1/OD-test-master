@@ -144,8 +144,12 @@ class AEKNNSVM(ScoreSVM):
             else:
                 base_model.netid = "MSE." + base_model.netid
             home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
-        elif isinstance(self, VAEKNNSVM):
+        elif isinstance(self, VAEBCEKNNSVM)or isinstance(self, VAEMSEKNNSVM):
             base_model = Global.get_ref_vae(dataset.name)[0]().to(self.args.device)
+            if isinstance(self, VAEBCEKNNSVM):
+                base_model.netid = "BCE." + base_model.netid
+            else:
+                base_model.netid = "MSE." + base_model.netid
             home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
         else:
             raise NotImplementedError()
@@ -193,7 +197,11 @@ class MSEKNNSVM(AEKNNSVM):
     def method_identifier(self):
         output = "MSEKNNSVM/%d"%self.default_model
         return output
-class VAEKNNSVM(AEKNNSVM):
+class VAEMSEKNNSVM(AEKNNSVM):
     def method_identifier(self):
-        output = "VAEKNNSVM/%d"%self.default_model
+        output = "VAEMSEKNNSVM/%d"%self.default_model
+        return output
+class VAEBCEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "VAEBCEKNNSVM/%d"%self.default_model
         return output
