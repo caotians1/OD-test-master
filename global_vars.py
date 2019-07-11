@@ -15,13 +15,14 @@ import datasets.STL as STL
 import datasets.TinyImagenet as TI
 import datasets.NIH_Chest as NC
 import datasets.MURA as MU
+import datasets.PADChest as PC
 
 all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         CIFAR.CIFAR10, CIFAR.CIFAR100,
                         STL.STL10, TI.TinyImagenet,
                         noise.UniformNoise, noise.NormalNoise,
                         STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest,
-                        NC.NIHChestBinaryTrainSplit, NC.NIHChestBinaryValSplit, NC.NIHChestBinaryTestSplit, MU.MURA]
+                        NC.NIHChestBinaryTrainSplit, NC.NIHChestBinaryValSplit, NC.NIHChestBinaryTestSplit, MU.MURA, PC.PADChest]
 
 """
     Not all the datasets can be used as a Dv, Dt (aka D2) for each dataset.
@@ -41,7 +42,8 @@ d2_compatiblity = {
     'NIHChestBinary'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'],
     'NIHCC'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC'],
     'NIHChestBinaryValSplit'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTrainSplit'],
-    'MURA'                                      :['NIHCC',]
+    'MURA'                                      :['NIHCC',],
+    'PADChest'                                  : ['NIHCC',]
     # STL10 is not compatible with CIFAR10 because of the 9-overlapping classes.
     # Erring on the side of caution.
 }
@@ -80,7 +82,7 @@ dataset_reference_classifiers = {
     'CIFAR100':               [CLS.CIFAR100_VGG,      CLS.CIFAR100_Resnet],
     'STL10':                  [CLS.STL10_VGG,         CLS.STL10_Resnet],
     'TinyImagenet':           [CLS.TinyImagenet_VGG,  CLS.TinyImagenet_Resnet],
-    'NIHCC': [CLS.NIHDenseBinary, CLS.NIHChestVGG],
+    'NIHCC':                    [CLS.NIHDenseBinary, CLS.NIHChestVGG],
 }
 
 
@@ -92,7 +94,7 @@ dataset_reference_autoencoders = {
     'CIFAR100':           [ModelFactory(AES.Generic_AE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
     'STL10':              [ModelFactory(AES.Generic_AE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
     'TinyImagenet':       [ModelFactory(AES.Generic_AE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
-    'NIHCC': [ModelFactory(AES.Generic_AE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+    'NIHCC':                [ModelFactory(AES.Generic_AE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)],
 }
 
 dataset_reference_vaes = {
@@ -143,7 +145,8 @@ all_methods = {
     'knn':              KNN.KNNSVM,
     'bceaeknn':         KNN.BCEKNNSVM,
     'mseaeknn':         KNN.MSEKNNSVM,
-    'vaeaeknn':         KNN.VAEKNNSVM,
+    'vaebceaeknn':         KNN.VAEBCEKNNSVM,
+    'vaemseaeknn':         KNN.VAEMSEKNNSVM,
     'binclass':         BinClass.BinaryClassifier,
     'deep_ensemble':    DE.DeepEnsemble,
     'odin':             ODIN.ODIN,

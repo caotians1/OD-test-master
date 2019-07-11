@@ -71,14 +71,17 @@ class ReconstructionThreshold(ProbabilityThreshold):
         print("Preparing training D1 for %s"%(dataset.name))
 
         # Initialize the multi-threaded loaders.
-        all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
+        all_loader  = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
 
         # Set up the model
-        model = Global.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
+        if self.default_model <2:
+            model = Global.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
+        else:
+            model = Global.get_ref_vae(dataset.name)[0]().to(self.args.device)
 
         # Set up the criterion
         criterion = None
-        if self.default_model == 0:
+        if self.default_model % 2 == 0:
             criterion = nn.BCEWithLogitsLoss().to(self.args.device)
         else:
             criterion = nn.MSELoss().to(self.args.device)
@@ -108,7 +111,7 @@ class ReconstructionThreshold(ProbabilityThreshold):
         config = self.get_base_config(dataset)
 
         import models as Models
-        if self.default_model == 0:
+        if self.default_model % 2 == 0:
             config.model.netid = "BCE." + config.model.netid
         else:
             config.model.netid = "MSE." + config.model.netid

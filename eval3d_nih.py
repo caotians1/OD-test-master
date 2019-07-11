@@ -116,18 +116,18 @@ if __name__ == '__main__':
                'score_svm/0',          #'score_svm/1',
                'openmax/0',            #'openmax/1',
                'binclass/0',           #'binclass/1',
-               'odin/0',               #'odin/1',
+               'odin/0',              # 'odin/1',
 
 
         ]
     methods_64 = [
-         'reconst_thresh/0',   #  'reconst_thresh/1',
+         'reconst_thresh/0',   'reconst_thresh/1', 'reconst_thresh/2',   'reconst_thresh/3',
          'ALI_reconst/0', 'ALI_reconst/1', #'ALI_reconst/0',
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
-          'vaeaeknn/1', 'mseaeknn/1',#'bceaeknn/1',
-          'vaeaeknn/2', 'mseaeknn/2', #'bceaeknn/2',
-          'vaeaeknn/4', 'mseaeknn/4', #'bceaeknn/4',
-          'vaeaeknn/8', 'mseaeknn/8', #'bceaeknn/8',
+          'vaemseaeknn/1','vaebceaeknn/1', 'mseaeknn/1', 'bceaeknn/1',
+          'vaemseaeknn/2','vaebceaeknn/2', 'mseaeknn/2',  'bceaeknn/2',
+          'vaemseaeknn/4','vaebceaeknn/4', 'mseaeknn/4',  'bceaeknn/4',
+          'vaemseaeknn/8','vaebceaeknn/8', 'mseaeknn/8',  'bceaeknn/8',
     ]
 
     D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
@@ -163,7 +163,7 @@ if __name__ == '__main__':
         for d3, D3 in zip(d3s,D3s):
             if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
                 test_results = eval_subroutine(mt, D1, D3)
-                results['results'].append([method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + test_results)
+                results['results'].append([method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + list(test_results))
                 torch.save(results, results_path)
 
     for method in methods_64:
@@ -174,7 +174,7 @@ if __name__ == '__main__':
             if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
                 test_results = eval_subroutine(mt, D164, D3)
                 results['results'].append(
-                    [method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + test_results)
+                    [method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + list(test_results))
                 torch.save(results, results_path)
     # Usecase 3 Evaluation
     D2 = NIHChestBinaryValSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
@@ -187,7 +187,7 @@ if __name__ == '__main__':
             trainval_acc = train_subroutine(mt, D1, D2)
         test_results = eval_subroutine(mt, D1, D3)
         results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
-                                    + test_results)
+                                    + list(test_results))
 
         torch.save(results, results_path)
 
@@ -197,7 +197,7 @@ if __name__ == '__main__':
             trainval_acc = train_subroutine(mt, D164, D2)
         test_results = eval_subroutine(mt, D164, D3)
         results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
-                                  + test_results)
+                                  + list(test_results))
         torch.save(results, results_path)
 
     for i, (m, ds, dm, dt, mi, a_train, a_test, auc_test, AP_test, ROC, PRC, fpr, tpr, precision, recall) in enumerate(results['results']):
