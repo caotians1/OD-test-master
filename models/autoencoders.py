@@ -35,47 +35,64 @@ class ResidualBlock(torch.nn.Module):
 
 
 class Residual_AE(nn.Module):
-    def __init__(self, dims, max_channels=512, depth=3, n_hidden=256):
+    def __init__(self, dims, max_channels=1024, depth=7, n_hidden=1024):
         assert len(dims) == 3, 'Please specify 3 values for dims'
         super(Residual_AE, self).__init__()
 
         kernel_size = 3
-        current_channels = 64
+        current_channels = 16
         self.epoch_factor = max(1, n_hidden//256)
         self.default_sigmoid = False
         self.netid = 'max.%d.d.%d.nH.%d'%(max_channels, depth, n_hidden)
 
         # encoder ###########################################
         modules = []
-        in_spatial_size = dims[1]
+        spatial_sizes = [(dims[1], dims[2])]
         modules.append(torch.nn.Conv2d(in_channels=dims[0], out_channels=current_channels, kernel_size=kernel_size, padding=(kernel_size-1)//2, bias=False))
         modules.append(torch.nn.BatchNorm2d(current_channels))
         modules.append(torch.nn.ELU())
         for i in range(depth):
             modules.append(ResidualBlock(current_channels, kernel_size))
             next_channels = min(current_channels * 2, max_channels)
-            modules.append(torch.nn.Conv2d(current_channels, next_channels, kernel_size=kernel_size, stride=2, bias=False))
+            modules.append(torch.nn.Conv2d(current_channels, next_channels, kernel_size=3, stride=2, bias=False, padding=1))
             current_channels = next_channels
             modules.append(ELU_BatchNorm2d(current_channels))
-            in_spatial_size = math.floor(in_spatial_size/2)
+            spatial_sizes.append(( math.floor(((spatial_sizes[-1][0]-1)/2) + 1), math.floor(((spatial_sizes[-1][1]-1)/2) + 1) ))
 
-        # Final layer
+        # Bottleneck layer
         modules.append(ELU_BatchNorm2d(current_channels))
         modules.append(ResidualBlock(filters=current_channels, kernel_size=kernel_size))
         self.encoder = nn.Sequential(*modules)
-
-        # decoder ###########################################
+        #
+        # # decoder ###########################################
         modules = []
+        out_pads = self._calculate_out_pad(spatial_sizes)
         for i in range(depth):
             next_channels = current_channels//2
+
             modules.append(torch.nn.ConvTranspose2d(current_channels, next_channels,
-                                                    kernel_size=kernel_size, stride=2, bias=False))
+                                                    kernel_size=3, stride=2, bias=False, padding=1, output_padding=out_pads[i]))
             current_channels = next_channels
             modules.append(ELU_BatchNorm2d(current_channels))
             modules.append(ResidualBlock(current_channels, kernel_size))
         # Final layer
         modules.append(nn.Conv2d(current_channels, dims[0], kernel_size=kernel_size, padding=(kernel_size-1)//2, bias=False))
         self.decoder = nn.Sequential(*modules)
+
+    def _calculate_out_pad(self, spatial_sizes, stride=2, padding=1, kernel_size=3, d=1):
+        out_pad = []
+        for i in reversed(range(1, len(spatial_sizes))):
+            current = spatial_sizes[i]
+            next = spatial_sizes[i-1]
+
+            pad = [0, 0]
+            for j in range(len(current)):
+                outputsize = (current[j] - 1)*stride-2*padding + (kernel_size-1)*d + 1
+                if outputsize < next[j]:
+                    pad[j] = 1
+            out_pad.append(pad)
+
+        return out_pad
 
     def encode(self, x):
         n_samples = x.size(0)
