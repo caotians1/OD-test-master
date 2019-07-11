@@ -19,7 +19,7 @@ def group_normalize(crops):
 
 class PADChestBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir,
-                 index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images_64",
+                 index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images-64",
                  imsize=224, transforms=None, binary=False, to_rgb=False, download=False, extract=True):
         super(PADChestBase,self).__init__()
         self.index_cache_path = index_cache_path
@@ -44,20 +44,13 @@ class PADChestBase(data.Dataset):
             self.img_list = cache_file['img_list']
             self.label_tensors = cache_file['label_tensors']
 
-            if not (osp.exists(osp.join(self.source_dir, 'val_split.pt'))
-                    and osp.exists(osp.join(self.source_dir, 'train_split.pt'))
-                    and osp.exists(osp.join(self.source_dir, 'test_split.pt'))):
-                self.generate_split()
-
-            self.split_inds = torch.load(osp.join(self.index_cache_path, "%s_split.pt"% self.split))
-
     def __len__(self):
-        return len(self.split_inds)
+        return len(self.label_tensors)
 
     def __getitem__(self, item):
-        index = self.split_inds[item]
-        img_name = self.img_list[index]
-        label = self.label_tensors[index]
+
+        img_name = self.img_list[item]
+        label = self.label_tensors[item]
         imp = osp.join(self.source_dir, self.image_dir, img_name)
         with open(imp, 'rb') as f:
             with Image.open(f) as img:
