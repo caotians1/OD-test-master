@@ -13,6 +13,6 @@ from datasets.MNIST import MNIST
 
 if __name__ == "__main__":
     dataset = MNIST(root_path=currentdir,download=True, extract=True)
-    model = Residual_AE(dims=(1, 32, 32), max_channels=256, depth=5, n_hidden=256)
+    model = Residual_AE(dims=(1, 28, 28), max_channels=256, depth=6, n_hidden=256)
     AESetup.train_autoencoder(args, model=model, dataset=dataset.get_D1_train(), BCE_Loss=False)
 
