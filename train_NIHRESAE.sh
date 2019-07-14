@@ -22,4 +22,4 @@ tar -xf $SLURM_TMPDIR/data/PADChest/images-64.tar -C $SLURM_TMPDIR/data/PADChest
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/NIHTrainAERES.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHAERES" --batch-size=64 --no-visualize --save --workers=8
+python setup/NIHTrainAERes.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHAERES" --batch-size=64 --no-visualize --save --workers=8
