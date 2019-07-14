@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
         ]
     methods_64 = [
-         'reconst_thresh/0',   'reconst_thresh/1', 'reconst_thresh/2',   'reconst_thresh/3',
+         'reconst_thresh/0',   'reconst_thresh/1', 'reconst_thresh/2',   'reconst_thresh/3', 'reconst_thresh/4'
          'ALI_reconst/0', 'ALI_reconst/1', #'ALI_reconst/0',
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
           'vaemseaeknn/1','vaebceaeknn/1', 'mseaeknn/1', 'bceaeknn/1',
