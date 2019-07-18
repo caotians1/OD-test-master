@@ -371,7 +371,7 @@ class MahalanobisDetector(ProbabilityThreshold):
                     if best_accuracy < test_average_acc:
                         print('Updating the on file model with %s' % (colored('%.4f' % test_average_acc, 'red')))
                         best_accuracy = test_average_acc
-                        torch.save(h_config.model.state_dict(), h_path)
+                        torch.save(h_config.model.H.state_dict(), h_path)
 
                     if test_average_acc > 1 - 1e-4:
                         break
