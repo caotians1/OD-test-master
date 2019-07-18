@@ -138,6 +138,7 @@ import methods.reconstruction_error as RE
 import methods.pixelcnn as PCNN
 import methods.openmax as OM
 import methods.ALI as ALI
+import methods.mahalanobis as MAHA
 
 all_methods = {
     'prob_threshold':   BT.ProbabilityThreshold,
@@ -155,7 +156,8 @@ all_methods = {
     'reconst_thresh':   RE.ReconstructionThreshold,
     'pixelcnn':         PCNN.PixelCNN,
     'openmax':          OM.OpenMax,
-    'ALI_reconst':      ALI.ALIReconstruction
+    'ALI_reconst':      ALI.ALIReconstruction,
+    'Maha':             MAHA.MahalanobisDetector
 }
 
 ##################################################################
