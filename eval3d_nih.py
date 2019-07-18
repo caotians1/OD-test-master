@@ -194,8 +194,10 @@ if __name__ == '__main__':
             D3s.append(dataset())
 
     for method in methods:
-        mt = Global.get_method(method, args)
         for d2, D2 in zip(d3s, D3s):
+            args.D2 = d2
+            mt = Global.get_method(method, args)
+
             if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
                 trainval_acc = train_subroutine(mt, D1, D2)
             for d3, D3 in zip(d3s,D3s):
@@ -207,8 +209,9 @@ if __name__ == '__main__':
                     torch.save(results, results_path)
 
     for method in methods_64:
-        mt = Global.get_method(method, args)
         for d2, D2 in zip(d3s, D3s):
+            args.D2 = d2
+            mt = Global.get_method(method, args)
             if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
                 trainval_acc = train_subroutine(mt, D164, D2)
             for d3, D3 in zip(d3s,D3s):
