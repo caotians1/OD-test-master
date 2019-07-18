@@ -7,8 +7,10 @@ import os.path as osp
 import csv
 import subprocess
 from PIL import Image
+import numpy as np
 
-N_CLASS = 2
+N_CLASS = 5
+CLASSES = ["PA", "AP", "L", "AP_horizontal", "PED" ]
 MAX_LENGTH = 1000000
 def to_tensor(crops):
     return torch.stack([transforms.ToTensor()(crop) for crop in crops])
@@ -81,12 +83,18 @@ class PADChestBase(data.Dataset):
         with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
             csvf = csv.DictReader(fp)
             for row in csvf:
-                if not row['Projection'] in ['L', 'PA']:
+                if not row['Projection'] in ['L', 'PA', 'AP', 'AP_horizontal']:
                     continue
                 imp = osp.join(self.source_dir, self.image_dir, row['ImageID'])
                 if osp.exists(imp):
                     img_list.append(row['ImageID'])
-                    label = [0, 1] if 'L' in row['Projection'] else [1, 0]
+                    if row['Pediatric'] == "PED":
+                        label = np.zeros(5, dtype=np.int64)
+                        label[4] = 1
+                    else:
+                        label = np.zeros(5, dtype=np.int64)
+                        ind = CLASSES.index(row['Projection'])
+                        label[ind] = 1
                     label_list.append(label)
         label_tensors = torch.LongTensor(label_list)
         os.makedirs(self.index_cache_path, exist_ok=True)
@@ -97,11 +105,12 @@ class PADChestBase(data.Dataset):
 
 class PADChest(AbstractDomainInterface):
     dataset_path = "PADChest"
-    def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
+    def __init__(self, root_path="./workspace/datasets/PADChest", keep_class=None, downsample=None, expand_channels=False,
                  test_length=None, download=False, extract=True):
 
         self.name = "PADChest"
         super(PADChest, self).__init__()
+        self.keep_in_classes = keep_class
         self.downsample = downsample
         self.expand_channels=expand_channels
         self.max_l = test_length
@@ -133,7 +142,22 @@ class PADChest(AbstractDomainInterface):
 
 
     def get_filtered_inds(self, basedata: PADChestBase, shuffle=False, max_l=None):
-        output_inds = torch.arange(0, len(basedata)).int()
+        if not self.keep_in_classes is None:
+
+            keep_in_mask_label = torch.zeros(N_CLASS).int()
+            for cla in self.keep_in_classes:
+                ii = CLASSES.index(cla)
+                keep_in_mask_label[ii] = 1
+            keep_inds = []
+            for seq_ind, label in enumerate(basedata.label_tensors):
+                label = label.int()
+                if torch.sum(label * keep_in_mask_label) > 0:
+                    keep_inds.append(seq_ind)
+                else:
+                    pass
+            output_inds = torch.Tensor(keep_inds).int()
+        else:
+            output_inds = torch.arange(0, len(basedata)).int()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
         if max_l is not None:
@@ -176,6 +200,35 @@ class PADChest(AbstractDomainInterface):
                                        transforms.Resize((target, target)),
                                        transforms.ToTensor()
                                        ])
+
+
+class PADChestAP(PADChest):
+    def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(PADChestAP, self).__init__(root_path, "AP", downsample, expand_channels,
+                 test_length, download, extract)
+
+
+class PADChestL(PADChest):
+    def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(PADChestL, self).__init__(root_path, "L", downsample, expand_channels,
+                 test_length, download, extract)
+
+
+class PADChestAPHorizontal(PADChest):
+    def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(PADChestAPHorizontal, self).__init__(root_path, "AP_horizontal", downsample, expand_channels,
+                 test_length, download, extract)
+
+
+class PADChestPED(PADChest):
+    def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(PADChestPED, self).__init__(root_path, "PED", downsample, expand_channels,
+                                                   test_length, download, extract)
+
 
 
 if __name__ == "__main__":

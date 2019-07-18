@@ -384,7 +384,7 @@ class MahalanobisDetector(ProbabilityThreshold):
         # If we load the pretrained model directly, we will have to initialize these.
         if trainer is None or h_config is None:
             h_config = self.get_H_config(train_ds=train_ds, valid_ds=valid_ds,
-                                         epsilon=0, temperature=1, will_train=False)
+                                         epsilon=0, will_train=False)
             # don't worry about the values of epsilon or temperature. it will be overwritten.
             trainer = IterativeTrainer(h_config, self.args)
 
