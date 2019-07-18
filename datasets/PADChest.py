@@ -170,7 +170,7 @@ class PADChest(AbstractDomainInterface):
     def get_D1_valid(self):
         return SubDataset(self.name, self.ds_valid, self.D1_valid_ind, label=0)
     def get_D1_test(self):
-        return SubDataset(self.name, self.ds_test, self.D1_test_ind, label=0)
+        return SubDataset(self.name, self.ds_valid, self.D1_test_ind, label=0)
 
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
@@ -180,7 +180,7 @@ class PADChest(AbstractDomainInterface):
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
         target_indices = self.D2_test_ind
-        return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.ds_valid, target_indices, label=1, transform=D1.conformity_transform())
 
     def conformity_transform(self):
         target = 64
