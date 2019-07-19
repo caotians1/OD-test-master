@@ -17,8 +17,9 @@ cp -r  ~/projects/rpp-bengioy/caotians/data/* $SLURM_TMPDIR/data
 mkdir -p $SLURM_TMPDIR/data/NIHCC/images_224
 tar -xzf $SLURM_TMPDIR/data/NIHCC/images_224.tar.gz -C $SLURM_TMPDIR/data/NIHCC/images_224 --strip-components=1
 tar -xzf $SLURM_TMPDIR/data/MURA/images_224.tar.gz -C $SLURM_TMPDIR/data/MURA
+tar -xf $SLURM_TMPDIR/data/PADChest/images-64.tar -C $SLURM_TMPDIR/data/PADChest
 
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/NIHTrainVAE.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHVAE" --batch-size=64 --no-visualize --save --workers=8
+python setup/NIHTrainVAEBCE.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHVAEALIBCE" --batch-size=64 --no-visualize --save --workers=8
