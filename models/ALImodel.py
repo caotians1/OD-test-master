@@ -187,7 +187,7 @@ class ALIModel(nn.Module):
             # Generator param
             GenKernel = [4, 7, 5, 7, 2, 1]
             GenStride = [1, 2, 2, 2, 1, 1]
-            GenDepth = [256, 128, 64, 32, 32, 32, dims[0]]
+            GenDepth = [256, 128, 64, 32, 32, dims[0]]
 
             # Discriminator X param
             DxKernel = [2, 7, 5, 7, 4]

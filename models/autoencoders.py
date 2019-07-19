@@ -232,10 +232,165 @@ class Generic_VAE(Generic_AE):
         dec = F.sigmoid(dec)
         return dec
 
+
+class ALILikeAE(nn.Module):
+    def __init__(self, dims, max_channels=1024, depth=6, n_hidden=512):
+        assert len(dims) == 3, 'Please specify 3 values for dims'
+        super(ALILikeAE, self).__init__()
+
+        EncKernel = [2, 7, 5, 7, 4, 1]
+        EncStride = [1, 2, 2, 2, 1, 1]
+        EncDepth = [64, 128, 256, 512, 512, n_hidden]
+
+        # Generator param
+        GenKernel = [4, 7, 5, 7, 2, 1]
+        GenStride = [1, 2, 2, 2, 1, 1]
+        GenDepth = [256, 128, 64, 32, 32, dims[0]]
+
+        self.epoch_factor = max(1, n_hidden//256)
+        self.default_sigmoid = False
+
+        remainder_layers = []
+        self.netid = 'max.%d.d.%d.nH.%d'%(max_channels, depth, n_hidden)
+
+        # encoder ###########################################
+        modules = []
+        in_channels = dims[0]
+
+        for i in range(depth):
+            modules.append(nn.Conv2d(in_channels, EncDepth[i], kernel_size=EncKernel[i], padding=0, stride=EncStride[i]))
+            modules.append(torch.nn.LeakyReLU(0.1, inplace=True))
+            modules.append(nn.BatchNorm2d(EncDepth[i]))
+            in_channels = EncDepth[i]
+
+        self.encoder = nn.Sequential(*modules)
+        self.fc_e_mu = nn.Linear(2 * n_hidden, n_hidden)
+        self.fc_e_std = nn.Linear(2 * n_hidden, n_hidden)
+        # decoder ###########################################
+        modules = []
+        in_channels = n_hidden
+        if self.__class__ == Generic_VAE:
+            in_channels = in_channels // 2
+
+        for i in range(depth):
+            modules.append(nn.ConvTranspose2d(in_channels, GenDepth[i], kernel_size=GenKernel[i], padding=0, stride=GenStride[i]))
+            modules.append(torch.nn.ReLU(True))
+            modules.append(nn.BatchNorm2d(GenDepth[i]))
+            in_channels = GenDepth[i]
+        # Final layer
+        self.decoder = nn.Sequential(*modules)
+
+    def encode(self, x):
+        n_samples = x.size(0)
+        code = self.encoder(x)
+        out = code.view(n_samples, -1) # flatten to vectors.
+        return out
+
+    def forward(self, x, sigmoid=False):
+        enc = self.encoder(x)
+        dec = self.decoder(enc)
+        if sigmoid or self.default_sigmoid:
+            dec = (F.tanh(dec) + 1) / 2.        # It's actually TanhHHHHHH
+        return dec
+
+    def train_config(self):
+        config = {}
+        config['optim']     = optim.Adam(self.parameters(), lr=1e-3)
+        config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-3, min_lr=1e-6, factor=0.1, verbose=True)
+        config['max_epoch'] = 240 * self.epoch_factor
+        return config
+
+    def preferred_name(self):
+        return self.__class__.__name__+"."+self.netid
+
+
+class ALILikeVAE(nn.Module):
+    def __init__(self, dims, max_channels=1024, depth=6, n_hidden=512):
+        assert len(dims) == 3, 'Please specify 3 values for dims'
+        super(ALILikeVAE, self).__init__()
+
+        EncKernel = [2, 7, 5, 7, 4]
+        EncStride = [1, 2, 2, 2, 1]
+        EncDepth = [64, 128, 256, 512, 512]
+
+        # Generator param
+        GenKernel = [4, 7, 5, 7, 2, 1]
+        GenStride = [1, 2, 2, 2, 1, 1]
+        GenDepth = [256, 128, 64, 32, 32, dims[0]]
+
+        self.epoch_factor = max(1, n_hidden//256)
+        self.default_sigmoid = False
+
+        remainder_layers = []
+        self.netid = 'max.%d.d.%d.nH.%d'%(max_channels, depth, n_hidden)
+
+        # encoder ###########################################
+        modules = []
+        in_channels = dims[0]
+
+        for i in range(depth-1):
+            modules.append(nn.Conv2d(in_channels, EncDepth[i], kernel_size=EncKernel[i], padding=0, stride=EncStride[i]))
+            modules.append(torch.nn.LeakyReLU(0.1, inplace=True))
+            modules.append(nn.BatchNorm2d(EncDepth[i]))
+            in_channels = EncDepth[i]
+
+        self.fc_e_mu = nn.Linear(in_channels, n_hidden)
+        self.fc_e_std = nn.Linear(in_channels, n_hidden)
+        self.encoder = nn.Sequential(*modules)
+
+        # decoder ###########################################
+        modules = []
+        in_channels = n_hidden
+        if self.__class__ == Generic_VAE:
+            in_channels = in_channels // 2
+
+        for i in range(depth):
+            modules.append(nn.ConvTranspose2d(in_channels, GenDepth[i], kernel_size=GenKernel[i], padding=0, stride=GenStride[i]))
+            modules.append(torch.nn.ReLU(True))
+            modules.append(nn.BatchNorm2d(GenDepth[i]))
+            in_channels = GenDepth[i]
+        # Final layer
+        self.decoder = nn.Sequential(*modules)
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = torch.exp(0.5*logvar)
+            eps = torch.randn_like(std)
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
+
+    def encode(self, x):
+        n_samples = x.size(0)
+        h_out = self.encoder(x)
+        code  = self.fc_e_mu(h_out.view(n_samples, -1))
+        return code
+
+    def forward(self, x):
+        enc     = self.encoder(x)
+        n_size  = enc.size(0)
+        mu, logvar  = self.fc_e_mu(enc.view(n_size, -1)), self.fc_e_std(enc.view(n_size, -1))
+        self.last_mu  = mu
+        self.last_std = logvar
+        z           = self.reparameterize(mu, logvar)
+        dec = self.decoder(z.view(n_size, -1, enc.size(2), enc.size(3)))
+        dec = (F.tanh(dec) + 1.0)/ 2.0
+        return dec
+
+    def train_config(self):
+        config = {}
+        config['optim']     = optim.Adam(self.parameters(), lr=1e-3)
+        config['scheduler'] = optim.lr_scheduler.ReduceLROnPlateau(config['optim'], patience=10, threshold=1e-3, min_lr=1e-6, factor=0.1, verbose=True)
+        config['max_epoch'] = 240 * self.epoch_factor
+        return config
+
+    def preferred_name(self):
+        return self.__class__.__name__+"."+self.netid
+
 class VAE_Loss(nn.Module):
     def __init__(self, VAE_model, BCE):
         super(VAE_Loss, self).__init__()
-        assert VAE_model.__class__ == Generic_VAE, 'Only Generic_VAEs are accepted.'
+        #assert VAE_model.__class__ == Generic_VAE, 'Only Generic_VAEs are accepted.'
         self.VAE = VAE_model
         self.size_average = True
         self.reduction = 'sum'
