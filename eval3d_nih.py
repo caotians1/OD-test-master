@@ -48,7 +48,7 @@ def eval_subroutine(ODmethod, D1, D3):
     print("Final test size: %d+%d=%d" % (len(d1_test), len(d3_test), len(test_mixture)))
 
     acc, auroc, auprc, fpr, tpr, precision, recall = ODmethod.test_H(test_mixture)
-    fig = plt.figure()
+    '''fig = plt.figure()
     lw = 2
     ax = fig.add_subplot(111)
     ax.plot(fpr, tpr, color='g',
@@ -65,7 +65,7 @@ def eval_subroutine(ODmethod, D1, D3):
     # Now we can save it to a numpy array.
     ROC = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     ROC = ROC.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-
+    plt.close(fig)
     fig = plt.figure()
     lw = 2
     ax = fig.add_subplot(111)
@@ -82,8 +82,8 @@ def eval_subroutine(ODmethod, D1, D3):
     # Now we can save it to a numpy array.
     PRC = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     PRC = PRC.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-
-    return acc, auroc, auprc, ROC, PRC, fpr, tpr, precision, recall
+    plt.close(fig)'''
+    return acc, auroc, auprc, None, None, fpr, tpr, precision, recall
 
 
 def init_and_load_results(path, args):
@@ -107,21 +107,23 @@ def has_done_before(method, d1, d2, d3):
     return False
 
 
-RESULTS_VER = 1
+RESULTS_VER = 3
 if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
     methods = [
-               #'prob_threshold/0',  #  'prob_threshold/1',
-               #'score_svm/0',          #'score_svm/1',
-               #'openmax/0',            #'openmax/1',
-               #'binclass/0',           #'binclass/1',
-               #'odin/0',              # 'odin/1',
+               'prob_threshold/0',  #'prob_threshold/1',
+               'score_svm/0',          #'score_svm/1',
+               'openmax/0',            #'openmax/1',
+               'binclass/0',           #'binclass/1',
+               'odin/0',              # 'odin/1',
                 "Maha",
 
         ]
     methods_64 = [
-         'reconst_thresh/4',  # 'reconst_thresh/1', 'reconst_thresh/2',   'reconst_thresh/3', 'reconst_thresh/0',
+          'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
+        'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
+        'reconst_thresh/8', 'reconst_thresh/9',
          'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
           'vaemseaeknn/1','vaebceaeknn/1', 'mseaeknn/1', 'bceaeknn/1',
@@ -157,6 +159,7 @@ if __name__ == '__main__':
             D3s.append(dataset())
 
     for method in methods:
+        print("current method", method)
         mt = Global.get_method(method, args)
         if not all([has_done_before(method, 'NIHCC', 'CIFAR', d3) for d3 in d3s]):
             trainval_acc = train_subroutine(mt, D1, D2)
@@ -167,6 +170,7 @@ if __name__ == '__main__':
                 torch.save(results, results_path)
 
     for method in methods_64:
+        print("current method", method)
         mt = Global.get_method(method, args)
         if not all([has_done_before(method, 'NIHCC', 'CIFAR', d3) for d3 in d3s]):
             trainval_acc = train_subroutine(mt, D164, D2)
@@ -194,6 +198,7 @@ if __name__ == '__main__':
             D3s.append(dataset())
 
     for method in methods:
+        print("current method", method)
         for d2, D2 in zip(d3s, D3s):
             args.D2 = d2
             mt = Global.get_method(method, args)
@@ -209,6 +214,7 @@ if __name__ == '__main__':
                     torch.save(results, results_path)
 
     for method in methods_64:
+        print("current method", method)
         for d2, D2 in zip(d3s, D3s):
             args.D2 = d2
             mt = Global.get_method(method, args)
@@ -229,6 +235,7 @@ if __name__ == '__main__':
 
     args.D2 = 'NIHChest'
     for method in methods:
+        print("current method", method)
         mt = Global.get_method(method, args)
         if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
             trainval_acc = train_subroutine(mt, D1, D2)
@@ -239,6 +246,7 @@ if __name__ == '__main__':
         torch.save(results, results_path)
 
     for method in methods_64:
+        print("current method", method)
         mt = Global.get_method(method, args)
         if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
             trainval_acc = train_subroutine(mt, D164, D2)
