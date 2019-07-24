@@ -5,7 +5,7 @@
 #SBATCH -c 8
 #SBATCH -n 1
 #SBATCH --tmp=256G
-#SBATCH --time=18:00:00
+#SBATCH --time=30:00:00
 
 module load python/3.6
 mkdir -p $SLURM_TMPDIR/env/temp
@@ -22,4 +22,4 @@ tar -xf $SLURM_TMPDIR/data/PADChest/images-64.tar -C $SLURM_TMPDIR/data/PADChest
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/NIHTrainVAEBCE.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHVAEALIBCE" --batch-size=64 --no-visualize --save --workers=8
+python setup/NIHTrainALILikeResVAE.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHAliLikeVAE" --batch-size=64 --no-visualize --save --workers=8

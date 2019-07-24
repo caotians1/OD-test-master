@@ -139,15 +139,10 @@ if __name__ == '__main__':
     #Usecase 1 Evaluation
     D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
     args.D2 = "CIFAR10"
-    d3s = ['UniformNoise',
-           'NormalNoise',
-           'MNIST',
-           'FashionMNIST',
-           'NotMNIST',
-           'CIFAR100',
-           'STL10',
-           'TinyImagenet',
-           'MURA',
+    d3s = ["PADChestAP",
+            "PADChestL",
+           "PADChestAPHorizontal",
+           "PADChestPED",
            ]
     D3s=[]
     for d3 in d3s:
@@ -180,80 +175,6 @@ if __name__ == '__main__':
                 results['results'].append(
                     [method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + list(test_results))
                 torch.save(results, results_path)
-
-    # usecase 2
-
-    d3s = ["PADChestAP",
-            "PADChestL",
-           "PADChestAPHorizontal",
-           "PADChestPED"
-           ]
-    D3s = []
-    for d3 in d3s:
-        dataset = Global.all_datasets[d3]
-        if 'dataset_path' in dataset.__dict__:
-            print(os.path.join(args.root_path, dataset.dataset_path))
-            D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
-        else:
-            D3s.append(dataset())
-
-    for method in methods:
-        print("current method", method)
-        for d2, D2 in zip(d3s, D3s):
-            args.D2 = d2
-            mt = Global.get_method(method, args)
-
-            if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
-                trainval_acc = train_subroutine(mt, D1, D2)
-            for d3, D3 in zip(d3s,D3s):
-                if d2 == d3:
-                    continue
-                if not has_done_before(method, 'NIHCC', d2, d3):
-                    test_results = eval_subroutine(mt, D1, D3)
-                    results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
-                    torch.save(results, results_path)
-
-    for method in methods_64:
-        print("current method", method)
-        for d2, D2 in zip(d3s, D3s):
-            args.D2 = d2
-            mt = Global.get_method(method, args)
-            if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
-                trainval_acc = train_subroutine(mt, D164, D2)
-            for d3, D3 in zip(d3s,D3s):
-                if d2 == d3:
-                    continue
-                if not has_done_before(method, 'NIHCC', d2, d3):
-                    test_results = eval_subroutine(mt, D164, D3)
-                    results['results'].append(
-                        [method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
-                    torch.save(results, results_path)
-
-    # Usecase 3 Evaluation
-    D2 = NIHChestBinaryValSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
-    D3 = NIHChestBinaryTestSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
-
-    args.D2 = 'NIHChest'
-    for method in methods:
-        print("current method", method)
-        mt = Global.get_method(method, args)
-        if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
-            trainval_acc = train_subroutine(mt, D1, D2)
-        test_results = eval_subroutine(mt, D1, D3)
-        results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
-                                    + list(test_results))
-
-        torch.save(results, results_path)
-
-    for method in methods_64:
-        print("current method", method)
-        mt = Global.get_method(method, args)
-        if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
-            trainval_acc = train_subroutine(mt, D164, D2)
-        test_results = eval_subroutine(mt, D164, D3)
-        results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
-                                  + list(test_results))
-        torch.save(results, results_path)
 
     for i, (m, ds, dm, dt, mi, a_train, a_test, auc_test, AP_test, ROC, PRC, fpr, tpr, precision, recall, TP, TN, FP, FN) in enumerate(results['results']):
         print ('%d\t%s\t%15s\t%-15s\t%.2f%% / %.2f%% - %.2f%%'%(i, m, '%s-%s'%(ds, dm), dt, a_train*100, a_test*100, auc_test*100))

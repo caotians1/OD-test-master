@@ -162,7 +162,7 @@ class NIHChest(AbstractDomainInterface):
     dataset_path = "NIHCC"
     def __init__(self, root_path="./workspace/datasets/NIHCC", leave_out_classes=(), keep_in_classes=None,
                  binary=False, downsample=None, expand_channels=False, test_length=None, download=False,
-                 extract=True):
+                 extract=True, doubledownsample=None):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
@@ -178,15 +178,19 @@ class NIHChest(AbstractDomainInterface):
         self.max_l = test_length
         cache_path = root_path
         source_path = root_path
+        if doubledownsample is not None:
+            transform_list = [transforms.Resize(doubledownsample),]
+        else:
+            transform_list = []
         if downsample is not None:
             print("downsampling to", downsample)
-            transform = transforms.Compose([transforms.Resize((32, 32)),
-                                            transforms.Resize((downsample, downsample)),
+            transform = transforms.Compose(transform_list +
+                                           [transforms.Resize((downsample, downsample)),
                                             transforms.ToTensor()])
             self.image_size = (downsample, downsample)
         else:
-            transform = transforms.Compose([transforms.Resize((32, 32)),
-                                            transforms.RandomCrop((224, 224)),
+            transform = transforms.Compose(transform_list +
+                                            [transforms.Resize((224, 224)),
                                             transforms.ToTensor()])
             self.image_size = (224, 224)
 

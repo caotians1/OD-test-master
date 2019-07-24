@@ -277,6 +277,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         self.H_class.eval()
         #weighted_AUROC = 0.0
         pred_aggregate = []
+        clas_aggregate = []
         y_aggregate = []
         with tqdm(total=len(dataset)) as pbar:
             for i, (image, label) in enumerate(dataset):
@@ -289,6 +290,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
                 pred_aggregate.append(prediction.data.cpu().view(-1).numpy())
                 y_aggregate.append(target.data.cpu().numpy())
                 classification = self.H_class.classify(prediction)
+                clas_aggregate.append(classification.data.cpu().numpy())
                 #roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")
                 #weighted_AUROC += roc * len(input)
 
@@ -311,9 +313,15 @@ class ProbabilityThreshold(AbstractMethodInterface):
         test_average_acc = correct/total_count
         target = np.concatenate(y_aggregate, axis=-1)
         prediction = np.concatenate(pred_aggregate, axis=-1)
+        classification = np.concatenate(clas_aggregate, axis=-1)
+        TP = np.sum(np.logical_and(classification == 1, target == 1))
+        TN = np.sum(np.logical_and(classification == 0, target == 0))
+        FP = np.sum(np.logical_and(classification == 1, target == 0))
+        FN = np.sum(np.logical_and(classification == 0, target == 1))
+
         fpr, tpr, thresholds = roc_curve(target, prediction)
         precision, recall, pr_thresholds = precision_recall_curve(target, prediction)
         auprc = average_precision_score(target, prediction)
         auroc = roc_auc_score(target, prediction)
         print("Final Test average accuracy %s, AUROC %s, AP %s"%(colored('%.4f%%'%(test_average_acc*100),'red'), colored('%.4f%%'%(auroc*100),'green'), colored('%.4f%%'%(auprc*100),'blue')))
-        return test_average_acc.item(), auroc, auprc, fpr, tpr, precision, recall
+        return test_average_acc.item(), auroc, auprc, fpr, tpr, precision, recall, TP, TN, FP, FN

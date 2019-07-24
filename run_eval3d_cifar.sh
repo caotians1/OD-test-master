@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --account=rpp-bengioy
 #SBATCH --gres=gpu:1
-#SBATCH --mem=32G
+#SBATCH --mem=64G
 #SBATCH -c 8
 #SBATCH -n 1
 #SBATCH --tmp=256G
-#SBATCH --time=30:00:00
+#SBATCH --time=24:00:00
 
 module load python/3.6
 mkdir -p $SLURM_TMPDIR/env/temp
@@ -22,4 +22,4 @@ tar -xf $SLURM_TMPDIR/data/PADChest/images-64.tar -C $SLURM_TMPDIR/data/PADChest
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/NIHTrainALILikeResAE.py --root_path=workspace/datasets-$SLURM_JOBID --exp="NIHAliLikeAE" --batch-size=64 --no-visualize --save --workers=8
+python eval3d_cifar_on_uc2.py --root_path=workspace/datasets-$SLURM_JOBID --exp="eval3d_cifar_on_uc2" --batch-size=64 --no-visualize --save --workers=8
