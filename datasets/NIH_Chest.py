@@ -180,11 +180,13 @@ class NIHChest(AbstractDomainInterface):
         source_path = root_path
         if downsample is not None:
             print("downsampling to", downsample)
-            transform = transforms.Compose([transforms.Resize((downsample, downsample)),
+            transform = transforms.Compose([transforms.Resize((32, 32)),
+                                            transforms.Resize((downsample, downsample)),
                                             transforms.ToTensor()])
             self.image_size = (downsample, downsample)
         else:
-            transform = transforms.Compose([transforms.RandomCrop((224, 224)),
+            transform = transforms.Compose([transforms.Resize((32, 32)),
+                                            transforms.RandomCrop((224, 224)),
                                             transforms.ToTensor()])
             self.image_size = (224, 224)
 
