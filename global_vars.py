@@ -23,6 +23,7 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         noise.UniformNoise, noise.NormalNoise,
                         STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest,
                         NC.NIHChestBinaryTrainSplit, NC.NIHChestBinaryValSplit, NC.NIHChestBinaryTestSplit, MU.MURA,
+                        MU.MURAHAND, MU.MURAELBOW, MU.MURAFINGER, MU.MURAFOREARM, MU.MURAHUMERUS, MU.MURASHOULDER, MU.MURAWRIST,
                         PC.PADChest, PC.PADChestAP, PC.PADChestL, PC.PADChestAPHorizontal, PC.PADChestPED]
 
 """
@@ -44,6 +45,13 @@ d2_compatiblity = {
     'NIHCC'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC'],
     'NIHChestBinaryValSplit'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTrainSplit'],
     'MURA'                                      :['NIHCC',],
+    'MURAHAND'                                      :['NIHCC',],
+    'MURAWRIST'                                      :['NIHCC',],
+    'MURAELBOW'                                      :['NIHCC',],
+    'MURAFINGER'                                      :['NIHCC',],
+    'MURAFOREARM'                                      :['NIHCC',],
+    'MURAHUMERUS'                                      :['NIHCC',],
+    'MURASHOULDER'                                      :['NIHCC',],
     'PADChest'                                  : ['NIHCC',],
     'PADChestAP'                                  : ['NIHCC',],
     'PADChestL'                                  : ['NIHCC',],

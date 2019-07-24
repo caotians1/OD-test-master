@@ -137,8 +137,17 @@ if __name__ == '__main__':
     args.D1 = 'NIHCC'
 
     #Usecase 1 Evaluation
-    D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
-    args.D2 = "CIFAR10"
+    d2s = ['CIFAR10', 'MURAHAND', 'UniformNoise']
+    D2s = []
+    for d2 in d2s:
+        dataset = Global.all_datasets[d2]
+        if 'dataset_path' in dataset.__dict__:
+            print(os.path.join(args.root_path, dataset.dataset_path))
+            D2s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
+        else:
+            D2s.append(dataset())
+    #D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
+    #args.D2 = "CIFAR10"
     d3s = ['UniformNoise',
            'NormalNoise',
            'MNIST',
@@ -147,7 +156,13 @@ if __name__ == '__main__':
            'CIFAR100',
            'STL10',
            'TinyImagenet',
-           'MURA',
+           'MURAHAND'                              
+           'MURAWRIST',
+           'MURAELBOW',
+           'MURAFINGER',
+           'MURAFOREARM',
+           'MURAHUMERUS',
+           'MURASHOULDER',
            ]
     D3s=[]
     for d3 in d3s:
@@ -161,25 +176,28 @@ if __name__ == '__main__':
     for method in methods:
         print("current method", method)
         mt = Global.get_method(method, args)
-        if not all([has_done_before(method, 'NIHCC', 'CIFAR', d3) for d3 in d3s]):
-            trainval_acc = train_subroutine(mt, D1, D2)
-        for d3, D3 in zip(d3s,D3s):
-            if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
-                test_results = eval_subroutine(mt, D1, D3)
-                results['results'].append([method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + list(test_results))
-                torch.save(results, results_path)
+        for d2, D2 in zip(d2s, D2s):
+            if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
+                args.D2 = d2
+                trainval_acc = train_subroutine(mt, D1, D2)
+                for d3, D3 in zip(d3s,D3s):
+                    if (not has_done_before(method, 'NIHCC', d2, d3)) and (d2 != d3):
+                        test_results = eval_subroutine(mt, D1, D3)
+                        results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                        torch.save(results, results_path)
 
-    for method in methods_64:
+    for method in methods:
         print("current method", method)
         mt = Global.get_method(method, args)
-        if not all([has_done_before(method, 'NIHCC', 'CIFAR', d3) for d3 in d3s]):
-            trainval_acc = train_subroutine(mt, D164, D2)
-        for d3, D3 in zip(d3s,D3s):
-            if not has_done_before(method, 'NIHCC', 'CIFAR', d3):
-                test_results = eval_subroutine(mt, D164, D3)
-                results['results'].append(
-                    [method, 'NIHCC', 'CIFAR', d3, mt.method_identifier(), trainval_acc] + list(test_results))
-                torch.save(results, results_path)
+        for d2, D2 in zip(d2s, D2s):
+            if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
+                args.D2 = d2
+                trainval_acc = train_subroutine(mt, D164, D2)
+                for d3, D3 in zip(d3s,D3s):
+                    if (not has_done_before(method, 'NIHCC', d2, d3)) and (d2 != d3):
+                        test_results = eval_subroutine(mt, D164, D3)
+                        results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                        torch.save(results, results_path)
 
     # usecase 2
 

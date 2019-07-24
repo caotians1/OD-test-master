@@ -5,8 +5,12 @@ from datasets import SubDataset, AbstractDomainInterface, ExpandRGBChannels
 import os
 import os.path as osp
 import csv
+import numpy as np
 import subprocess
 from PIL import Image
+
+LABELS = ["ELBOW", "FINGER", "FOREARM", "HAND", "HUMERUS", "SHOULDER", "WRIST"]
+N_CLASS = 7
 
 def to_tensor(crops):
     return torch.stack([transforms.ToTensor()(crop) for crop in crops])
@@ -81,7 +85,14 @@ class MURABase(data.Dataset):
                 if osp.exists(imp):
                     #add subpath after 'train' or 'valid' and image name to img_list
                     img_list.append(osp.join(*row['Image Path'].split('/')[2:]))
-                    label = [0, 1] if 'positive' in row['Image Path'] else [1, 0]
+                    label = np.zeros(N_CLASS)
+                    for i, l in enumerate(LABELS):
+                        if l in row['Image Path']:
+                            label[i] = 1
+                            break
+                    if label.sum() < 1:
+                        print("AHH")
+                    #label = [0, 1] if 'positive' in row['Image Path'] else [1, 0]
                     label_list.append(label)
         label_tensors = torch.LongTensor(label_list)
         return {'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list,
@@ -92,11 +103,12 @@ class MURABase(data.Dataset):
 class MURA(AbstractDomainInterface):
     dataset_path = "MURA"
 
-    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+    def __init__(self, root_path="./workspace/datasets/MURA", keep_class=None,downsample=None, expand_channels=False,
                  test_length=None, download=False, extract=True):
         self.name = "MURA"
         super(MURA, self).__init__()
         self.downsample = downsample
+        self.keep_in_classes = keep_class
         self.expand_channels=expand_channels
         self.max_l = test_length
         cache_path = root_path
@@ -125,7 +137,23 @@ class MURA(AbstractDomainInterface):
             self.D2_test_ind = self.get_filtered_inds(self.ds_valid)
 
     def get_filtered_inds(self, basedata: MURABase, shuffle=False, max_l=None):
-        output_inds = torch.arange(0, len(basedata)).int()
+        if not self.keep_in_classes is None:
+            #print(basedata.__dict__)
+            keep_in_mask_label = torch.zeros(N_CLASS).int()
+            for cla in self.keep_in_classes:
+                ii = LABELS.index(cla)
+                keep_in_mask_label[ii] = 1
+            keep_inds = []
+            for seq_ind, base_ind in enumerate(basedata.split_inds):
+                label = basedata.label_tensors[base_ind].int()
+                if torch.sum(label * keep_in_mask_label) > 0:
+                    keep_inds.append(seq_ind)
+                else:
+                    pass
+            output_inds = torch.Tensor(keep_inds).int()
+        else:
+            output_inds = torch.arange(0, len(basedata)).int()
+        #output_inds = torch.arange(0, len(basedata)).int()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
         if max_l is not None:
@@ -168,9 +196,56 @@ class MURA(AbstractDomainInterface):
                                        transforms.ToTensor()
                                        ])
 
+class MURAHAND(MURA):
+    dataset_path = "MURA"
+    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(MURAHAND, self).__init__(root_path, ["HAND", ], downsample, expand_channels,
+                                         test_length, download, extract)
+
+class MURAWRIST(MURA):
+    dataset_path = "MURA"
+    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(MURAWRIST, self).__init__(root_path, ["WRIST", ], downsample, expand_channels,
+                                         test_length, download, extract)
+
+class MURASHOULDER(MURA):
+    dataset_path = "MURA"
+    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(MURASHOULDER, self).__init__(root_path, ["SHOULDER", ], downsample, expand_channels,
+                                         test_length, download, extract)
+ #["ELBOW", "FINGER", "FOREARM", "HAND", "HUMERUS", "SHOULDER", "WRIST"]
+class MURAFOREARM(MURA):
+    dataset_path = "MURA"
+    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(MURAFOREARM, self).__init__(root_path, ["FOREARM", ], downsample, expand_channels,
+                                         test_length, download, extract)
+class MURAFINGER(MURA):
+    dataset_path = "MURA"
+    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(MURAFINGER, self).__init__(root_path, ["FINGER", ], downsample, expand_channels,
+                                         test_length, download, extract)
+
+class MURAELBOW(MURA):
+    dataset_path = "MURA"
+    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(MURAELBOW, self).__init__(root_path, ["ELBOW", ], downsample, expand_channels,
+                                         test_length, download, extract)
+
+class MURAHUMERUS(MURA):
+    dataset_path = "MURA"
+    def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True):
+        super(MURAHUMERUS, self).__init__(root_path, ["HUMERUS", ], downsample, expand_channels,
+                                         test_length, download, extract)
 
 if __name__ == "__main__":
-    dataset = MURA()
+    dataset = MURAHand()
     d1_train = dataset.get_D1_train()
     print(len(d1_train))
     loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
