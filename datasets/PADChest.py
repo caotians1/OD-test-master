@@ -118,11 +118,12 @@ class PADChest(AbstractDomainInterface):
         source_path = root_path
         if downsample is not None:
             print("downsampling to", downsample)
-            transform = transforms.Compose([transforms.Resize((downsample, downsample)),
+            transform = transforms.Compose([transforms.Resize((32, 32)),
+                                            transforms.Resize((downsample, downsample)),
                                             transforms.ToTensor()])
             self.image_size = (downsample, downsample)
         else:
-            transform = transforms.Compose([transforms.RandomCrop((64, 64)),
+            transform = transforms.Compose([transforms.Resize((64, 64)),
                                             transforms.ToTensor()])
             self.image_size = (64, 64)
 
