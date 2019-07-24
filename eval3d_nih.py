@@ -107,7 +107,7 @@ def has_done_before(method, d1, d2, d3):
     return False
 
 
-RESULTS_VER = 3
+RESULTS_VER = 4
 if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
