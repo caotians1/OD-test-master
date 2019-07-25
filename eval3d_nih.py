@@ -156,7 +156,7 @@ if __name__ == '__main__':
            'CIFAR100',
            'STL10',
            'TinyImagenet',
-           'MURAHAND'                              
+           'MURAHAND',
            'MURAWRIST',
            'MURAELBOW',
            'MURAFINGER',

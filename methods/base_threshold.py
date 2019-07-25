@@ -290,7 +290,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
                 pred_aggregate.append(prediction.data.cpu().view(-1).numpy())
                 y_aggregate.append(target.data.cpu().numpy())
                 classification = self.H_class.classify(prediction)
-                clas_aggregate.append(classification.data.cpu().numpy())
+                clas_aggregate.append(classification.data.cpu().view(-1).numpy())
                 #roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")
                 #weighted_AUROC += roc * len(input)
 
