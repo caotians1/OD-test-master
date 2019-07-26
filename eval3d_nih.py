@@ -137,7 +137,7 @@ if __name__ == '__main__':
     args.D1 = 'NIHCC'
 
     #Usecase 1 Evaluation
-    d2s = ['CIFAR10', 'MURAHAND', 'UniformNoise']
+    d2s = [ 'CIFAR10', 'UniformNoise', 'MURAHAND', ]
     D2s = []
     for d2 in d2s:
         dataset = Global.all_datasets[d2]
@@ -148,7 +148,8 @@ if __name__ == '__main__':
             D2s.append(dataset())
     #D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
     #args.D2 = "CIFAR10"
-    d3s = ['UniformNoise',
+    d3s = [
+            'UniformNoise',
            'NormalNoise',
            'MNIST',
            'FashionMNIST',
@@ -186,7 +187,7 @@ if __name__ == '__main__':
                         results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                         torch.save(results, results_path)
 
-    for method in methods:
+    for method in methods_64:
         print("current method", method)
         mt = Global.get_method(method, args)
         for d2, D2 in zip(d2s, D2s):
