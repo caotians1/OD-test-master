@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import os
 
 class AbstractMethodInterface(object):
     def __init__(self):
@@ -114,7 +115,7 @@ def get_cached(model, dataset_loader, device):
 
     outputX, outputY = [], []
     with torch.set_grad_enabled(False):
-        with tqdm(total=len(dataset_loader)) as pbar:
+        with tqdm(total=len(dataset_loader), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
             pbar.set_description('Caching data')
             for i, (image, label) in enumerate(dataset_loader):
                 pbar.update()

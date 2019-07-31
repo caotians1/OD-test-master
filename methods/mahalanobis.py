@@ -47,7 +47,7 @@ class MahaModelWrapper(nn.Module):
         all_xs = defaultdict(list)
         all_ys = []
 
-        for x, y in tqdm(data_loader):
+        for x, y in tqdm(data_loader, disable=bool(os.environ.get("DISABLE_TQDM", False))):
             x = x.to(device)
             all_ys.append(y)
 

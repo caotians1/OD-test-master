@@ -1,6 +1,6 @@
 from __future__ import print_function
 import errno
-
+import os
 import timeit
 from tqdm import tqdm
 from termcolor import colored
@@ -72,7 +72,7 @@ class IterativeTrainer(object):
         try:
             # TQDM sometimes throws IOError exceptions when you
             # try to close it. We ignore those exceptions.
-            with tqdm(total=len(dataset)) as pbar:
+            with tqdm(total=len(dataset), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
                 if backward and not stochastic:
                     optimizer.zero_grad()
 

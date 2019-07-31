@@ -279,7 +279,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         pred_aggregate = []
         clas_aggregate = []
         y_aggregate = []
-        with tqdm(total=len(dataset)) as pbar:
+        with tqdm(total=len(dataset), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
             for i, (image, label) in enumerate(dataset):
                 pbar.update()
 

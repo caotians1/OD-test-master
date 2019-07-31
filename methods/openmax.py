@@ -16,6 +16,7 @@
 from __future__ import print_function
 
 import numpy as np
+import os
 from scipy.stats import exponweib
 from tqdm import tqdm
 from termcolor import colored
@@ -189,7 +190,7 @@ class OpenMax(ProbabilityThreshold):
         data_loader = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
 
         with torch.set_grad_enabled(False):
-            with tqdm(total=len(data_loader)) as pbar:
+            with tqdm(total=len(data_loader), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
                 pbar.set_description('Calculating MAV')
                 for i, (image, label) in enumerate(data_loader):
                     pbar.update()
@@ -209,7 +210,7 @@ class OpenMax(ProbabilityThreshold):
         # distance is set to the combination and the other two are not used.
         distance_values = [[] for i in range(n_classes)]
         with torch.set_grad_enabled(False):
-            with tqdm(total=len(data_loader)) as pbar:
+            with tqdm(total=len(data_loader),disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
                 pbar.set_description('Calculating the distances')
                 for i, (image, label) in enumerate(data_loader):
                     pbar.update()
@@ -223,7 +224,7 @@ class OpenMax(ProbabilityThreshold):
         torch_values = [torch.FloatTensor(dv) for dv in distance_values]
         
         self.weib_models = []
-        with tqdm(total=n_classes) as pbar:
+        with tqdm(total=n_classes, disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
             pbar.set_description('Learning the Weibull model')
             for cl in range(n_classes):
                 pbar.update()

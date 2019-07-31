@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os
 from os import path
 from termcolor import colored
 
@@ -74,7 +75,7 @@ class KNNSVM(ScoreSVM):
         n_dim  = dataset[0][0].numel()
         self.base_data = torch.zeros(n_data, n_dim, dtype=torch.float32)
 
-        with tqdm(total=n_data) as pbar:
+        with tqdm(total=n_data, disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
             pbar.set_description('Caching X_train for %d-nn'%self.default_model)
             for i, (x, _) in enumerate(dataset):
                 self.base_data[i].copy_(x.view(-1))
@@ -174,7 +175,7 @@ class AEKNNSVM(ScoreSVM):
         self.base_data = torch.zeros(n_data, n_dim, dtype=torch.float32)
         base_ind = 0
         with torch.set_grad_enabled(False):
-            with tqdm(total=len(all_loader)) as pbar:
+            with tqdm(total=len(all_loader), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
                 pbar.set_description('Caching X_train for %d-nn'%self.default_model)
                 for i, (x, _) in enumerate(all_loader):
                     n_data = x.size(0)
