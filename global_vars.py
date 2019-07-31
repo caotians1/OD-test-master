@@ -110,6 +110,7 @@ dataset_reference_autoencoders = {
     'NIHCC':                [ModelFactory(AES.Generic_AE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512),
                               ModelFactory(AES.ALILikeAE, dims=(1, 64, 64)),
                               ModelFactory(AES.Residual_AE, dims=(1, 64, 64)),
+                             ModelFactory(AES.ALILikeResAE, dims=(1, 64, 64)),
                              ],
 }
 
@@ -122,6 +123,7 @@ dataset_reference_vaes = {
     'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
     'NIHCC':                [ModelFactory(AES.Generic_VAE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512),
                                 ModelFactory(AES.ALILikeVAE, dims=(1, 64, 64)),
+                             ModelFactory(AES.ALILikeResVAE, dims=(1, 64, 64)),
                              ],
 }
 

@@ -5,7 +5,7 @@
 #SBATCH -c 8
 #SBATCH -n 1
 #SBATCH --tmp=256G
-#SBATCH --time=32:00:00
+#SBATCH --time=24:00:00
 
 module load python/3.6
 mkdir -p $SLURM_TMPDIR/env/temp
@@ -22,4 +22,4 @@ tar -xf $SLURM_TMPDIR/data/PADChest/images-64.tar -C $SLURM_TMPDIR/data/PADChest
 source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python eval3d_nih.py --root_path=workspace/datasets-$SLURM_JOBID --exp="eval3d_nih_nofig_no3264" --batch-size=64 --no-visualize --save --workers=8
+python eval3d_nih_3264.py --root_path=workspace/datasets-$SLURM_JOBID --exp="eval3d_nih_nofig3264" --batch-size=64 --no-visualize --save --workers=8

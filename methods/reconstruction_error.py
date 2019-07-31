@@ -84,6 +84,10 @@ class ReconstructionThreshold(ProbabilityThreshold):
             model = Global.get_ref_vae(dataset.name)[1]().to(self.args.device)
         elif self.default_model < 10:
             model = Global.get_ref_autoencoder(dataset.name)[2]().to(self.args.device)
+        elif self.default_model < 12:
+            model = Global.get_ref_autoencoder(dataset.name)[3]().to(self.args.device)
+        elif self.default_model < 14:
+            model = Global.get_ref_vae(dataset.name)[2]().to(self.args.device)
 
         # Set up the criterion
         criterion = None
