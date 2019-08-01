@@ -133,8 +133,8 @@ if __name__ == '__main__':
           'vaemseaeknn/8','vaebceaeknn/8', 'mseaeknn/8',  'bceaeknn/8',
     ]
 
-    D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), doubledownsample=32)
-    D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64, doubledownsample=32)
+    D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
+    D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64)
     args.D1 = 'NIHCC'
 
     #Usecase 1 Evaluation
@@ -147,10 +147,8 @@ if __name__ == '__main__':
             D2s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
         else:
             D2s.append(dataset())
-    #D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
-    #args.D2 = "CIFAR10"
+
     d3s = [
-            'UniformNoise',
            'NormalNoise',
            'MNIST',
            'FashionMNIST',
@@ -158,7 +156,6 @@ if __name__ == '__main__':
            'CIFAR100',
            'STL10',
            'TinyImagenet',
-           'MURAHAND',
            'MURAWRIST',
            'MURAELBOW',
            'MURAFINGER',
@@ -184,6 +181,7 @@ if __name__ == '__main__':
                 trainval_acc = train_subroutine(mt, D1, D2)
                 for d3, D3 in zip(d3s,D3s):
                     if (not has_done_before(method, 'NIHCC', d2, d3)) and (d2 != d3):
+                        print("Evaluating: ", method, 'NIHCC', d2, d3)
                         test_results = eval_subroutine(mt, D1, D3)
                         results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                         torch.save(results, results_path)
@@ -197,6 +195,7 @@ if __name__ == '__main__':
                 trainval_acc = train_subroutine(mt, D164, D2)
                 for d3, D3 in zip(d3s,D3s):
                     if (not has_done_before(method, 'NIHCC', d2, d3)) and (d2 != d3):
+                        print("Evaluating: ", method, 'NIHCC', d2, d3)
                         test_results = eval_subroutine(mt, D164, D3)
                         results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                         torch.save(results, results_path)
@@ -229,6 +228,7 @@ if __name__ == '__main__':
                 if d2 == d3:
                     continue
                 if not has_done_before(method, 'NIHCC', d2, d3):
+                    print("Evaluating: ", method, 'NIHCC', d2, d3)
                     test_results = eval_subroutine(mt, D1, D3)
                     results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
@@ -244,6 +244,7 @@ if __name__ == '__main__':
                 if d2 == d3:
                     continue
                 if not has_done_before(method, 'NIHCC', d2, d3):
+                    print("Evaluating: ", method, 'NIHCC', d2, d3)
                     test_results = eval_subroutine(mt, D164, D3)
                     results['results'].append(
                         [method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
@@ -259,21 +260,23 @@ if __name__ == '__main__':
         mt = Global.get_method(method, args)
         if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
             trainval_acc = train_subroutine(mt, D1, D2)
-        test_results = eval_subroutine(mt, D1, D3)
-        results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
-                                    + list(test_results))
+            print("Evaluating: ", method, 'NIHCC', 'NIHChest', 'NIHCC_test')
+            test_results = eval_subroutine(mt, D1, D3)
+            results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
+                                        + list(test_results))
 
-        torch.save(results, results_path)
+            torch.save(results, results_path)
 
     for method in methods_64:
         print("current method", method)
         mt = Global.get_method(method, args)
         if not has_done_before(method, 'NIHCC', 'NIHCC_val', 'NICC_test'):
             trainval_acc = train_subroutine(mt, D164, D2)
-        test_results = eval_subroutine(mt, D164, D3)
-        results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
-                                  + list(test_results))
-        torch.save(results, results_path)
+            print("Evaluating: ", method, 'NIHCC', 'NIHChest', 'NIHCC_test')
+            test_results = eval_subroutine(mt, D164, D3)
+            results['results'].append([method, 'NIHCC', 'NIHCC_val', 'NICC_test', mt.method_identifier(), trainval_acc]
+                                      + list(test_results))
+            torch.save(results, results_path)
 
     for i, (m, ds, dm, dt, mi, a_train, a_test, auc_test, AP_test, ROC, PRC, fpr, tpr, precision, recall, TP, TN, FP, FN) in enumerate(results['results']):
         print ('%d\t%s\t%15s\t%-15s\t%.2f%% / %.2f%% - %.2f%%'%(i, m, '%s-%s'%(ds, dm), dt, a_train*100, a_test*100, auc_test*100))

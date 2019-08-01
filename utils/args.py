@@ -4,6 +4,7 @@ import os
 #assert 'VIRTUAL_ENV' in os.environ, 'Please activate the environment first.'
 
 import random
+import numpy as np
 import socket
 from argparse import ArgumentParser
 from termcolor import colored
@@ -48,6 +49,7 @@ assert torch.cuda.is_available(), colored('A cuda device is required!', 'red')
 # Reproducability.
 # Set up the random seed based on the arg.
 random.seed(args.seed)
+np.random.seed(args.seed)
 torch.manual_seed(args.seed)
 torch.cuda.set_device(args.cuda_device)
 torch.cuda.manual_seed(args.seed)
