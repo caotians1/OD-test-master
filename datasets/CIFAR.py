@@ -18,9 +18,8 @@ class CIFAR10(AbstractDomainInterface):
         D2 (Dv, Dt): 50,000 valid + 10,000 test.
     """
     dataset_path="cifar10"
-    def __init__(self, root_path='./workspace/datasets/cifar10', download=False, extract=False):
+    def __init__(self, root_path='./workspace/datasets/cifar10', download=False, extract=False, doubledownsample=None):
         super(CIFAR10, self).__init__()
-        
         im_transformer  = transforms.Compose([transforms.ToTensor()])
         self.D1_train_ind = torch.arange(0, 40000).int()
         self.D1_valid_ind = torch.arange(40000, 50000).int()
@@ -67,9 +66,9 @@ class CIFAR100(AbstractDomainInterface):
         D2 (Dv , Dt): 50,000 valid + 10,000 test.
     """
     dataset_path = "cifar100"
-    def __init__(self, root_path="./workspace/datasets/cifar100", download=False, extract=False):
+    def __init__(self, root_path="./workspace/datasets/cifar100", download=False, extract=False, doubledownsample=None):
         super(CIFAR100, self).__init__()
-        
+
         im_transformer  = transforms.Compose([transforms.ToTensor()])
         self.D1_train_ind = torch.arange(0, 40000).int()
         self.D1_valid_ind = torch.arange(40000, 50000).int()

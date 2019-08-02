@@ -106,7 +106,7 @@ class PADChestBase(data.Dataset):
 class PADChest(AbstractDomainInterface):
     dataset_path = "PADChest"
     def __init__(self, root_path="./workspace/datasets/PADChest", keep_class=None, downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
 
         self.name = "PADChest"
         super(PADChest, self).__init__()
@@ -116,14 +116,18 @@ class PADChest(AbstractDomainInterface):
         self.max_l = test_length
         cache_path = root_path
         source_path = root_path
+        if doubledownsample is not None:
+            transform_list = [transforms.Resize(doubledownsample),]
+        else:
+            transform_list = []
         if downsample is not None:
             print("downsampling to", downsample)
-            transform = transforms.Compose([transforms.Resize((32, 32)),
+            transform = transforms.Compose(transform_list +[
                                             transforms.Resize((downsample, downsample)),
                                             transforms.ToTensor()])
             self.image_size = (downsample, downsample)
         else:
-            transform = transforms.Compose([transforms.Resize((64, 64)),
+            transform = transforms.Compose(transform_list +[transforms.Resize((64, 64)),
                                             transforms.ToTensor()])
             self.image_size = (64, 64)
 
@@ -206,33 +210,33 @@ class PADChest(AbstractDomainInterface):
 class PADChestAP(PADChest):
     dataset_path = "PADChest"
     def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(PADChestAP, self).__init__(root_path, ["AP",], downsample, expand_channels,
-                 test_length, download, extract)
+                 test_length, download, extract, doubledownsample)
 
 
 class PADChestL(PADChest):
     dataset_path = "PADChest"
     def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(PADChestL, self).__init__(root_path, ["L",], downsample, expand_channels,
-                 test_length, download, extract)
+                 test_length, download, extract, doubledownsample)
 
 
 class PADChestAPHorizontal(PADChest):
     dataset_path = "PADChest"
     def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(PADChestAPHorizontal, self).__init__(root_path, ["AP_horizontal",], downsample, expand_channels,
-                 test_length, download, extract)
+                 test_length, download, extract, doubledownsample)
 
 
 class PADChestPED(PADChest):
     dataset_path = "PADChest"
     def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(PADChestPED, self).__init__(root_path, ["PED",], downsample, expand_channels,
-                                                   test_length, download, extract)
+                                                   test_length, download, extract, doubledownsample)
 
 
 

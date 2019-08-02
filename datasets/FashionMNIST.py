@@ -11,7 +11,7 @@ class FashionMNIST(AbstractDomainInterface):
         D2: 60,000 valid + 10,000 test.
     """
     dataset_path = "fmnist"
-    def __init__(self, root_path='./workspace/datasets/fmnist', download=False, extract=False):
+    def __init__(self, root_path='./workspace/datasets/fmnist', download=False, extract=False, doubledownsample=None):
         super(FashionMNIST, self).__init__()
 
         im_transformer  = transforms.Compose([transforms.ToTensor()])

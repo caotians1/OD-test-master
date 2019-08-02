@@ -104,7 +104,7 @@ class MURA(AbstractDomainInterface):
     dataset_path = "MURA"
 
     def __init__(self, root_path="./workspace/datasets/MURA", keep_class=None,downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         self.name = "MURA"
         super(MURA, self).__init__()
         self.downsample = downsample
@@ -113,13 +113,19 @@ class MURA(AbstractDomainInterface):
         self.max_l = test_length
         cache_path = root_path
         source_path = root_path
+        if doubledownsample is not None:
+            transform_list = [transforms.Resize(doubledownsample),]
+        else:
+            transform_list = []
         if downsample is not None:
             print("downsampling to", downsample)
-            transform = transforms.Compose([transforms.Resize((downsample, downsample)),
+            transform = transforms.Compose(transform_list +
+                                           [transforms.Resize((downsample, downsample)),
                                             transforms.ToTensor()])
             self.image_size = (downsample, downsample)
         else:
-            transform = transforms.Compose([transforms.Resize((224, 224)),
+            transform = transforms.Compose(transform_list +
+                                            [transforms.Resize((224, 224)),
                                             transforms.ToTensor()])
             self.image_size = (224, 224)
 
@@ -199,50 +205,50 @@ class MURA(AbstractDomainInterface):
 class MURAHAND(MURA):
     dataset_path = "MURA"
     def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(MURAHAND, self).__init__(root_path, ["HAND", ], downsample, expand_channels,
-                                         test_length, download, extract)
+                                         test_length, download, extract, doubledownsample)
 
 class MURAWRIST(MURA):
     dataset_path = "MURA"
     def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(MURAWRIST, self).__init__(root_path, ["WRIST", ], downsample, expand_channels,
-                                         test_length, download, extract)
+                                         test_length, download, extract, doubledownsample)
 
 class MURASHOULDER(MURA):
     dataset_path = "MURA"
     def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(MURASHOULDER, self).__init__(root_path, ["SHOULDER", ], downsample, expand_channels,
-                                         test_length, download, extract)
+                                         test_length, download, extract, doubledownsample)
  #["ELBOW", "FINGER", "FOREARM", "HAND", "HUMERUS", "SHOULDER", "WRIST"]
 class MURAFOREARM(MURA):
     dataset_path = "MURA"
     def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(MURAFOREARM, self).__init__(root_path, ["FOREARM", ], downsample, expand_channels,
-                                         test_length, download, extract)
+                                         test_length, download, extract, doubledownsample)
 class MURAFINGER(MURA):
     dataset_path = "MURA"
     def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(MURAFINGER, self).__init__(root_path, ["FINGER", ], downsample, expand_channels,
-                                         test_length, download, extract)
+                                         test_length, download, extract, doubledownsample)
 
 class MURAELBOW(MURA):
     dataset_path = "MURA"
     def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(MURAELBOW, self).__init__(root_path, ["ELBOW", ], downsample, expand_channels,
-                                         test_length, download, extract)
+                                         test_length, download, extract, doubledownsample)
 
 class MURAHUMERUS(MURA):
     dataset_path = "MURA"
     def __init__(self, root_path="./workspace/datasets/MURA", downsample=None, expand_channels=False,
-                 test_length=None, download=False, extract=True):
+                 test_length=None, download=False, extract=True, doubledownsample=None):
         super(MURAHUMERUS, self).__init__(root_path, ["HUMERUS", ], downsample, expand_channels,
-                                         test_length, download, extract)
+                                         test_length, download, extract, doubledownsample)
 
 if __name__ == "__main__":
     dataset = MURAHand()

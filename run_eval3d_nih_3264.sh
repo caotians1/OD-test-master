@@ -5,7 +5,7 @@
 #SBATCH -c 8
 #SBATCH -n 1
 #SBATCH --tmp=256G
-#SBATCH --time=24:00:00
+#SBATCH --time=48:00:00
 
 module load python/3.6
 mkdir -p $SLURM_TMPDIR/env/temp

@@ -4,7 +4,7 @@ import torch
 import matplotlib
 import matplotlib.pyplot as plt
 
-res_path = "workspace/experiments/eval3d_nih_nofig_no_3264/results.pth"
+res_path = "workspace/experiments/temp_no_3264/results.pth"
 results = torch.load(res_path)['results']
 def weighted_std(values, weights, axis=None):
     if axis is None:
@@ -23,6 +23,8 @@ def make_plot(filename, d2_handles):
     use_case1_acc = []
     use_case1_auroc = []
     use_case1_auprc = []
+    tpr = []
+
     method_handles = []
     d3_handles = []
     true_d2_handles = []
@@ -48,10 +50,10 @@ def make_plot(filename, d2_handles):
 
     for acc, roc, prc in zip(use_case1_acc, use_case1_auroc, use_case1_auprc):
         try:
-            uc1_acc[acc[1], acc[2]] = acc[0]
-            uc1_roc[roc[1], roc[2]] = roc[0]
-            uc1_prc[prc[1], prc[2]] = prc[0]
-            weights[prc[1], prc[2]] = 1
+            uc1_acc[acc[1], acc[2], acc[3]] = acc[0]
+            uc1_roc[roc[1], roc[2], roc[3]] = roc[0]
+            uc1_prc[prc[1], prc[2], prc[3]] = prc[0]
+            weights[prc[1], prc[2], prc[3]] = 1
         except:
             pass
     try:
@@ -65,9 +67,9 @@ def make_plot(filename, d2_handles):
     uc1_rocm = np.average(uc1_roc, axis=(1,2), weights=weights)
     uc1_prcm = np.average(uc1_prc, axis=(1,2), weights=weights)
 
-    uc1_accv = weighted_std(uc1_acc, weights, axis=(1,2)) / np.sqrt(len(uc1_acc))
-    uc1_rocv = weighted_std(uc1_roc, weights, axis=(1,2)) / np.sqrt(len(uc1_acc))
-    uc1_prcv = weighted_std(uc1_prc, weights, axis=(1,2)) / np.sqrt(len(uc1_acc))
+    uc1_accv = weighted_std(uc1_acc, weights, axis=(1,2))
+    uc1_rocv = weighted_std(uc1_roc, weights, axis=(1,2))
+    uc1_prcv = weighted_std(uc1_prc, weights, axis=(1,2))
 
     #uc1_accq = np.quantile(uc1_acc, [.25, .75], axis=1)
     #uc1_rocq = np.quantile(uc1_roc, [.25, .75], axis=1)
@@ -92,7 +94,7 @@ def make_plot(filename, d2_handles):
     title_str = "Usecase 1, D2="
     for handle in d2_handles:
         title_str += handle+', '
-    title_str += "error bar shows stderr"
+    title_str += "error bar shows std"
     ax.set_title(title_str)
     ax.legend()
     fig.set_size_inches(25, 9.5)
@@ -114,11 +116,11 @@ def make_plot(filename, d2_handles):
     plt.savefig(filename, dpi=100)
     return
 
-filenames = ["UC1_CIFAR_no3264.png",
-            "UC1_MURAHAND_no3264.png",
-             "UC1_UniNoise_no3264.png",
-             "UC2_no3264.png",
-             "UC3_no3264.png",
+filenames = ["UC1_CIFAR_temp_no3264.png",
+            "UC1_MURAHAND_temp_no3264.png",
+             "UC1_UniNoise_temp_no3264.png",
+             "UC2_temp_no3264.png",
+             "UC3_temp_no3264.png",
              ]
 d2sets = ["CIFAR10", "MURAHAND", "UniformNoise", "PAD", "NIHCC"]
 for fn, d2 in zip(filenames, d2sets):

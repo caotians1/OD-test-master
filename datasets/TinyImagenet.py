@@ -229,15 +229,19 @@ class TinyImagenet(AbstractDomainInterface):
         D2: 10,000 Valid + 100,000 train (shuffled), 10,000 Test.
     """
     dataset_path="tinyimagenet"
-    def __init__(self, root_path='./workspace/datasets/tinyimagenet', downsample=None, download=True, extract=True):
+    def __init__(self, root_path='./workspace/datasets/tinyimagenet', downsample=None, download=True, extract=True, doubledownsample=None):
         super(TinyImagenet, self).__init__()
         
         im_transformer = None
         self.downsample = downsample
-        if self.downsample is None:
-            im_transformer  = transforms.Compose([transforms.ToTensor()])
+        if doubledownsample is not None:
+            transform_list = [transforms.Resize(doubledownsample),]
         else:
-            im_transformer  = transforms.Compose([transforms.Resize((self.downsample, self.downsample)), transforms.ToTensor()])
+            transform_list = []
+        if self.downsample is None:
+            im_transformer  = transforms.Compose(transform_list + [transforms.ToTensor()])
+        else:
+            im_transformer  = transforms.Compose(transform_list + [transforms.Resize((self.downsample, self.downsample)), transforms.ToTensor()])
         self.ds_train   = TinyImagenetParent(root_path,
                                             split='train',
                                             transform=im_transformer,

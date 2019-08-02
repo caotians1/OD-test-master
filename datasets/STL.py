@@ -12,15 +12,19 @@ class STL10(AbstractDomainInterface):
         D2:    5,000 valid + 8,000 test.
     """
     dataset_path="stl10"
-    def __init__(self, downsample=None, root_path='./workspace/datasets/stl10', download=False, extract=False):
+    def __init__(self, downsample=None, root_path='./workspace/datasets/stl10', download=False, extract=False, doubledownsample=None):
         super(STL10, self).__init__()
 
         im_transformer = None
         self.downsample = downsample
-        if self.downsample is None:
-            im_transformer  = transforms.Compose([transforms.ToTensor()])
+        if doubledownsample is not None:
+            transform_list = [transforms.Resize(doubledownsample),]
         else:
-            im_transformer  = transforms.Compose([transforms.Resize((self.downsample, self.downsample)), transforms.ToTensor()])
+            transform_list = []
+        if self.downsample is None:
+            im_transformer  = transforms.Compose(transform_list + [transforms.ToTensor()])
+        else:
+            im_transformer  = transforms.Compose(transform_list + [transforms.Resize((self.downsample, self.downsample)), transforms.ToTensor()])
         self.D1_train_ind = torch.arange(0, 5000).int()
         self.D1_valid_ind = torch.arange(0, 4000).int()
         self.D1_test_ind  = torch.arange(4000, 8000).int()

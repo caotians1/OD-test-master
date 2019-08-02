@@ -144,11 +144,9 @@ if __name__ == '__main__':
         dataset = Global.all_datasets[d2]
         if 'dataset_path' in dataset.__dict__:
             print(os.path.join(args.root_path, dataset.dataset_path))
-            D2s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
+            D2s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path), doubledownsample=32))
         else:
             D2s.append(dataset())
-    #D2 = Global.all_datasets['CIFAR10'](root_path=os.path.join(args.root_path, 'cifar10'))
-    #args.D2 = "CIFAR10"
     d3s = ['UniformNoise',
            'NormalNoise',
            'MNIST',
@@ -170,7 +168,7 @@ if __name__ == '__main__':
         dataset = Global.all_datasets[d3]
         if 'dataset_path' in dataset.__dict__:
             print(os.path.join(args.root_path, dataset.dataset_path))
-            D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
+            D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path), doubledownsample=32))
         else:
             D3s.append(dataset())
 
@@ -212,7 +210,7 @@ if __name__ == '__main__':
         dataset = Global.all_datasets[d3]
         if 'dataset_path' in dataset.__dict__:
             print(os.path.join(args.root_path, dataset.dataset_path))
-            D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
+            D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path), doubledownsample=32))
         else:
             D3s.append(dataset())
 
@@ -249,8 +247,8 @@ if __name__ == '__main__':
                     torch.save(results, results_path)
 
     # Usecase 3 Evaluation
-    D2 = NIHChestBinaryValSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
-    D3 = NIHChestBinaryTestSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
+    D2 = NIHChestBinaryValSplit(root_path=os.path.join(args.root_path, 'NIHCC'), doubledownsample=32)
+    D3 = NIHChestBinaryTestSplit(root_path=os.path.join(args.root_path, 'NIHCC'), doubledownsample=32)
 
     args.D2 = 'NIHChest'
     for method in methods:
