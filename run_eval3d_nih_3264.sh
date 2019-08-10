@@ -23,4 +23,4 @@ source $SLURM_TMPDIR/env/temp/bin/activate
 python setup_datasets.py
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
 export DISABLE_TQDM="True"
-python eval3d_nih_3264.py --root_path=workspace/datasets-$SLURM_JOBID --exp="eval3d_nih_nofig_3264" --batch-size=64 --no-visualize --save --workers=8
+python eval3d_nih_3264.py --root_path=workspace/datasets-$SLURM_JOBID --exp="eval3d_nih_nofig_3264_rerun" --batch-size=64 --no-visualize --save --workers=8

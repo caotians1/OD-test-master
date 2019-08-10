@@ -4,8 +4,24 @@ import torch
 import matplotlib
 import matplotlib.pyplot as plt
 
-res_path = "workspace/experiments/temp_no_3264/results.pth"
+res_path = "workspace/experiments/eval3d_nih_nofig_no3264_seed10/results.pth"
 results = torch.load(res_path)['results']
+rec_error = {
+            "reconst_thresh/0":"12Layer-AE-BCE",
+            "reconst_thresh/1":"12Layer-AE-MSE",
+            "reconst_thresh/2":"12Layer-VAE-BCE",
+            "reconst_thresh/3": "12Layer-VAE-MSE",
+            "reconst_thresh/4": "ALIstyle-AE-BCE",
+            "reconst_thresh/5": "ALIstyle-AE-MSE",
+            "reconst_thresh/6": "ALIstyle-VAE-BCE",
+            "reconst_thresh/7": "ALIstyle-VAE-MSE",
+            "reconst_thresh/8": "DeepRes-AE-BCE",
+            "reconst_thresh/9": "DeepRes-AE-MSE",
+            "reconst_thresh/10": "ALIRes-AE-BCE",
+            "reconst_thresh/11": "ALIRes-AE-MSE",
+            "reconst_thresh/12": "ALIRes-VAE-BCE",
+            "reconst_thresh/13": "ALIRes-VAE-MSE",
+             }
 def weighted_std(values, weights, axis=None):
     if axis is None:
         axis = np.arange(len(values.shape))
@@ -17,7 +33,7 @@ def weighted_std(values, weights, axis=None):
     variance = np.average((values-average)**2, weights=weights, axis=axis)
     return np.sqrt(variance)
 
-def make_plot(filename, d2_handles):
+def make_plot(filename, d2_handles, title):
     if type(d2_handles) == str:
         d2_handles = [d2_handles, ]
     use_case1_acc = []
@@ -31,9 +47,13 @@ def make_plot(filename, d2_handles):
     for row in results:
         if not any([handle in row[2] for handle in d2_handles]):
             continue
-        if row[0] not in method_handles:
-            method_handles.append(row[0])
-        ind_1 = method_handles.index(row[0])
+        if row[0] in rec_error:
+            token = rec_error[row[0]]
+        else:
+            token = row[0]
+        if token not in method_handles:
+            method_handles.append(token)
+        ind_1 = method_handles.index(token)
         if row[2] not in true_d2_handles:
             true_d2_handles.append(row[2])
         ind_2 = true_d2_handles.index(row[2])
@@ -56,12 +76,10 @@ def make_plot(filename, d2_handles):
             weights[prc[1], prc[2], prc[3]] = 1
         except:
             pass
-    try:
-        inds_0, inds_1, inds_2 = np.nonzero(np.array(weights == 0))
-    except:
-        pass
+    inds_0, inds_1, inds_2 = np.nonzero(np.array(weights == 0))
+
     for i in range(len(inds_0)):
-        print(method_handles[inds_0[i]],", ", true_d2_handles[inds_1[i]], ",", d3_handles[inds_1[2]], ", has no entry")
+        print(method_handles[inds_0[i]],", ", true_d2_handles[inds_1[i]], ",", d3_handles[inds_2[i]], ", has no entry")
     # method means
     uc1_accm = np.average(uc1_acc, axis=(1,2), weights=weights)
     uc1_rocm = np.average(uc1_roc, axis=(1,2), weights=weights)
@@ -91,7 +109,7 @@ def make_plot(filename, d2_handles):
 
     ax.set_xticks(ind)
     ax.set_xticklabels(method_handles, rotation=45, ha='right')
-    title_str = "Usecase 1, D2="
+    title_str = title + ", D2="
     for handle in d2_handles:
         title_str += handle+', '
     title_str += "error bar shows std"
@@ -116,15 +134,15 @@ def make_plot(filename, d2_handles):
     plt.savefig(filename, dpi=100)
     return
 
-filenames = ["UC1_CIFAR_temp_no3264.png",
-            "UC1_MURAHAND_temp_no3264.png",
-             "UC1_UniNoise_temp_no3264.png",
-             "UC2_temp_no3264.png",
-             "UC3_temp_no3264.png",
+filenames = ["UC1_224-64_2.png",
+             "UC2_224-64_2.png",
+             "UC3_224-64_2.png",
              ]
-d2sets = ["CIFAR10", "MURAHAND", "UniformNoise", "PAD", "NIHCC"]
-for fn, d2 in zip(filenames, d2sets):
-    make_plot(fn, d2)
+d2sets = [["CIFAR10", "MURAHAND", "UniformNoise",],
+          "PAD", "NIHCC"]
+titles = ["Usecase 1", "Usecase 2", "Usecase 3"]
+for fn, d2, title in zip(filenames, d2sets, titles):
+    make_plot(fn, d2, title)
 #
 # use_case1_acc = []
 # use_case1_auroc = []
