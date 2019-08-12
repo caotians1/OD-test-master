@@ -65,7 +65,7 @@ class MURABase(data.Dataset):
             return
         import tarfile
         with tarfile.open(os.path.join(self.source_dir, "images.tar.gz")) as tar:
-            tar.extractall()
+            tar.extractall(os.path.join(self.source_dir, self.image_dir))
         return
 
     def generate_index(self):

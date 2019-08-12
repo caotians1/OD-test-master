@@ -5,39 +5,34 @@ from datasets import SubDataset, AbstractDomainInterface, ExpandRGBChannels
 import os
 import os.path as osp
 import csv
+import numpy as np
 import subprocess
 from PIL import Image
-import numpy as np
+from zipfile import ZipFile
 
-MAX_LENGTH = 1000000
 
-class DRDBase(data.Dataset):
-    def __init__(self, index_cache_path, source_dir, split, index_file="trainLabels.csv", image_dir="images_224",
-                 imsize=224, transforms=None, to_gray=False, download=False, extract=True):
-        super(DRDBase,self).__init__()
+class IDCBase(data.Dataset):
+    def __init__(self, index_cache_path, source_dir, split, image_dir="images", imsize=224, transforms=None,
+                 to_gray=False, download=False, extract=True):
+        super(IDCBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
         self.split = split
-        self.cache_file = "DRD.pkl"
-        self.index_file = index_file
-        self.image_dir = image_dir
         self.imsize = imsize
+        self.image_dir = image_dir
         self.to_gray = to_gray
         if transforms is None:
-            self.transforms = transforms.Compose([
-                                                transforms.Resize((imsize,imsize)),
-                                                transforms.ToTensor()])
+            self.transforms = transforms.Compose([transforms.Resize((imsize, imsize)),
+                                                  transforms.ToTensor()])
         else:
             self.transforms = transforms
         assert split in ["train", "val", "test"]
         if extract:
             self.extract()
-            if not osp.exists(osp.join(self.index_cache_path, self.cache_file)):
-                self.generate_index()
-            cache_file = torch.load(osp.join(self.index_cache_path, self.cache_file))
+            cache_file = self.generate_index()
             self.img_list = cache_file['img_list']
             self.label_tensors = cache_file['label_tensors']
-
+            self.split_inds = cache_file["split_inds"]
             if not (osp.exists(osp.join(self.source_dir, 'val_split.pt'))
                     and osp.exists(osp.join(self.source_dir, 'train_split.pt'))
                     and osp.exists(osp.join(self.source_dir, 'test_split.pt'))):
@@ -52,47 +47,44 @@ class DRDBase(data.Dataset):
         index = self.split_inds[item]
         img_name = self.img_list[index]
         label = self.label_tensors[index]
+
         imp = osp.join(self.source_dir, self.image_dir, img_name)
         with open(imp, 'rb') as f:
             with Image.open(f) as img:
-                if self.to_gray:
-                    img = self.transforms(img.convert('L'))
-                else:
+                if not self.to_gray:
                     img = self.transforms(img.convert('RGB'))
+                else:
+                    img = self.transforms(img.convert('L'))
         return img, label
 
     def extract(self):
         if os.path.exists(os.path.join(self.source_dir, self.image_dir)):
             return
-        import tarfile
-        tarsplits_list = ["images_224.tar.gz",
-                     ]
-        for tar_split in tarsplits_list:
-            with tarfile.open(os.path.join(self.source_dir, tar_split)) as tar:
-                tar.extractall(os.path.join(self.source_dir, self.image_dir))
-
+        with ZipFile(os.path.join(self.source_dir, 'IDC_regular_ps50_idx5.zip'), 'r') as zipObj:
+            zipObj.extractall(os.path.join(self.source_dir, self.image_dir))
+        return
 
     def generate_index(self):
         """
-        Scan index file to create list of images and labels for each image. Also stores index files in index_cache_path
+        Scan index file to create list of images and labels for each image
         :return:
         """
         img_list = []
         label_list = []
-        with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
-            csvf = csv.DictReader(fp)
-            for row in csvf:
-                imp = osp.join(self.source_dir, self.image_dir, row['image']+".jpeg")
-                if osp.exists(imp):
-                    img_list.append(row['image']+".jpeg")
+        dir_level = len(os.path.join(self.source_dir, self.image_dir).split("\\"))
+        for (dirpath, dirnames, filenames) in os.walk(os.path.join(self.source_dir, self.image_dir)):
+            for filename in filenames:
+                if '.png' in filename:
+                    dir_strs = dirpath.split('\\')[dir_level:]
+                    if type(dir_strs) is list:
+                        dir_strs = osp.join(*dir_strs)
+                    img_list.append(os.path.join(dir_strs, filename))
+                    label_list.append(int(filename.split('.')[0][-1]))
 
-                    label = 0 if int(row['level']) > 0 else 1
-                    label_list.append(label)
         label_tensors = torch.LongTensor(label_list)
-        os.makedirs(self.index_cache_path, exist_ok=True)
-        torch.save({'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list},
-                   osp.join(self.index_cache_path, self.cache_file))
-        return
+        return {'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list,
+                    'split_inds': torch.arange(len(img_list))
+                    }
 
     def generate_split(self):
         n_total = len(self.img_list)
@@ -107,19 +99,18 @@ class DRDBase(data.Dataset):
         torch.save(test_inds, osp.join(self.index_cache_path, "test_split.pt"))
         return
 
+class IDC(AbstractDomainInterface):
 
-class DRD(AbstractDomainInterface):
-
-    dataset_path = "diabetic-retinopathy-detection"
-    def __init__(self, root_path="./workspace/datasets/diabetic-retinopathy-detection", downsample=None, shrink_channels=False, test_length=None, download=False,
+    dataset_path = "IDC"
+    def __init__(self, root_path="./workspace/datasets/IDC", downsample=None, shrink_channels=False, test_length=None, download=False,
                  extract=True, doubledownsample=None):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
          is removed from indices..
         """
-        self.name = "DRD"
-        super(DRD, self).__init__()
+        self.name = "IDC"
+        super(IDC, self).__init__()
         self.downsample = downsample
         self.shrink_channels=shrink_channels
         self.max_l = test_length
@@ -141,11 +132,11 @@ class DRD(AbstractDomainInterface):
                                             transforms.ToTensor()])
             self.image_size = (224, 224)
 
-        self.ds_train = DRDBase(cache_path, source_path, "train", transforms=transform,
+        self.ds_train = IDCBase(cache_path, source_path, "train", transforms=transform,
                                      to_gray=shrink_channels, download=download, extract=extract)
-        self.ds_valid = DRDBase(cache_path, source_path, "val", transforms=transform,
+        self.ds_valid = IDCBase(cache_path, source_path, "val", transforms=transform,
                                 to_gray=shrink_channels, download=download, extract=extract)
-        self.ds_test = DRDBase(cache_path, source_path, "test", transforms=transform,
+        self.ds_test = IDCBase(cache_path, source_path, "test", transforms=transform,
                                to_gray=shrink_channels, download=download, extract=extract)
         if extract:
             self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
@@ -156,7 +147,7 @@ class DRD(AbstractDomainInterface):
             self.D2_test_ind = self.get_filtered_inds(self.ds_test)
 
 
-    def get_filtered_inds(self, basedata: DRDBase, shuffle=False, max_l=None):
+    def get_filtered_inds(self, basedata: IDCBase, shuffle=False, max_l=None):
         output_inds = torch.arange(0, len(basedata)).int()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
@@ -202,6 +193,3 @@ class DRD(AbstractDomainInterface):
                                        transforms.ToTensor(),
                                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                                        ])
-
-if __name__ == "__main__":
-    pass

@@ -70,7 +70,7 @@ class PADChestBase(data.Dataset):
                      ]
         for tar_split in tarsplits_list:
             with tarfile.open(os.path.join(self.source_dir, tar_split)) as tar:
-                tar.extractall()
+                tar.extractall(os.path.join(self.source_dir, self.image_dir))
 
 
     def generate_index(self):
