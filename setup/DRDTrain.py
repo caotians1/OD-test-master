@@ -9,7 +9,9 @@ sys.path.insert(0,parentdir)
 import models as Models
 import global_vars as Global
 from utils.args import args
-
+import torchvision
+from torch.utils.data.sampler import WeightedRandomSampler
+import numpy as np
 import categories.classifier_setup as CLSetup
 from models.classifiers import DRDDense
 from datasets.DRD import DRD
@@ -17,5 +19,5 @@ from datasets.DRD import DRD
 if __name__ == "__main__":
     dataset = DRD(root_path=os.path.join(args.root_path, "diabetic-retinopathy-detection"))
     model = DRDDense("densenet121-a639ec97.pth")
-    CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train())
+    CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train(), balanced=True)
 

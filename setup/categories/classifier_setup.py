@@ -12,8 +12,10 @@ import global_vars as Global
 from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
 from datasets import MirroredDataset
+from torch.utils.data.sampler import WeightedRandomSampler
+import numpy as np
 
-def get_classifier_config(args, model, dataset):
+def get_classifier_config(args, model, dataset, balanced=False):
     print("Preparing training D1 for %s"%(dataset.name))
 
     # 80%, 20% for local train+test
@@ -25,9 +27,25 @@ def get_classifier_config(args, model, dataset):
         train_ds = new_train_ds
 
     # Initialize the multi-threaded loaders.
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=True)
+    if balanced:
+        y_train = []
+        for x, y in train_ds:
+            y_train.append(y.numpy())
+        y_train = np.array(y_train)
+        class_sample_count = np.array([len(np.where(y_train == t)[0]) for t in np.unique(y_train)])
+        weight = 1. / class_sample_count
+        samples_weight = np.array([weight[t] for t in y_train])
+
+        samples_weight = torch.from_numpy(samples_weight)
+        sampler = WeightedRandomSampler(samples_weight.type('torch.DoubleTensor'), len(samples_weight))
+        train_loader = DataLoader(train_ds, batch_size=args.batch_size, num_workers=args.workers,
+                                  pin_memory=True, sampler=sampler)
+    else:
+        train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,
+                                  pin_memory=True)
+
     valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
-    all_loader   = DataLoader(dataset,  batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
+    all_loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
 
     # Set up the criterion
     criterion = nn.NLLLoss().to(args.device)
@@ -66,9 +84,8 @@ def get_classifier_config(args, model, dataset):
 
     return config
 
-def train_classifier(args, model, dataset):
-    config = get_classifier_config(args, model, dataset)
-
+def train_classifier(args, model, dataset, balanced=False):
+    config = get_classifier_config(args, model, dataset, balanced)
     home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, dataset.name, model_setup=True, suffix_str='base0')
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
@@ -92,6 +109,9 @@ def train_classifier(args, model, dataset):
             trainer.run_epoch(epoch, phase='test')
 
             train_loss = config.logger.get_measure('train_loss').mean_epoch()
+            train_average_acc = config.logger.get_measure('train_accuracy').mean_epoch()
+            print("Train Loss %.3f, Train Accuracy %.3f" % (train_loss, train_average_acc))
+
             config.scheduler.step(train_loss)
 
             if config.visualize:

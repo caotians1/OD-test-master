@@ -18,4 +18,5 @@ tar -xzf $SLURM_TMPDIR/data/diabetic-retinopathy-detection/images_224.tar.gz -C 
 
 source $SLURM_TMPDIR/env/temp/bin/activate
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
-python setup/DRDTrain.py --root_path=workspace/datasets-$SLURM_JOBID --exp="DRDDense" --batch-size=128 --no-visualize --save --workers=8
+export DISABLE_TQDM="True"
+python setup/DRDTrain.py --root_path=workspace/datasets-$SLURM_JOBID --exp="DRDDense" --batch-size=64 --no-visualize --save --workers=8
