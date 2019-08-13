@@ -11,11 +11,11 @@ import global_vars as Global
 from utils.args import args
 
 import categories.classifier_setup as CLSetup
-from models.classifiers import NIHDenseBinary
+from models.classifiers import DRDDense
 from datasets.DRD import DRD
 
 if __name__ == "__main__":
     dataset = DRD(root_path=os.path.join(args.root_path, "diabetic-retinopathy-detection"))
-    model = NIHDenseBinary("densenet121-a639ec97.pth")
+    model = DRDDense("densenet121-a639ec97.pth")
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train())
 
