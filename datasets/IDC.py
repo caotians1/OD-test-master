@@ -71,13 +71,16 @@ class IDCBase(data.Dataset):
         """
         img_list = []
         label_list = []
-        dir_level = len(os.path.join(self.source_dir, self.image_dir).split("\\"))
+        if os.name=="posix":
+            split_char = "/"
+        else:
+            split_char = "\\"
+        dir_level = len(os.path.join(self.source_dir, self.image_dir).split(split_char))
         for (dirpath, dirnames, filenames) in os.walk(os.path.join(self.source_dir, self.image_dir)):
             for filename in filenames:
                 if '.png' in filename:
-                    dir_strs = dirpath.split('\\')[dir_level:]
-                    if type(dir_strs) is list:
-                        dir_strs = osp.join(*dir_strs)
+                    dir_strs = dirpath.split(split_char)[dir_level:]
+                    dir_strs = osp.join(*dir_strs)
                     img_list.append(os.path.join(dir_strs, filename))
                     label_list.append(int(filename.split('.')[0][-1]))
 
@@ -91,8 +94,8 @@ class IDCBase(data.Dataset):
         train_num = int(0.7*n_total)
         val_num = int(0.8*n_total)
         train_inds = np.arange(train_num)
-        val_inds = np.arange(start=train_num, end=val_num)
-        test_inds = np.arange(start=val_num, end=n_total)
+        val_inds = np.arange(start=train_num, stop=val_num)
+        test_inds = np.arange(start=val_num, stop=n_total)
 
         torch.save(train_inds, osp.join(self.index_cache_path, "train_split.pt"))
         torch.save(val_inds, osp.join(self.index_cache_path, "val_split.pt"))
