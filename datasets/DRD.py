@@ -99,8 +99,8 @@ class DRDBase(data.Dataset):
         train_num = int(0.7*n_total)
         val_num = int(0.8*n_total)
         train_inds = np.arange(train_num)
-        val_inds = np.arange(start=train_num, end=val_num)
-        test_inds = np.arange(start=val_num, end=n_total)
+        val_inds = np.arange(start=train_num, stop=val_num)
+        test_inds = np.arange(start=val_num, stop=n_total)
 
         torch.save(train_inds, osp.join(self.index_cache_path, "train_split.pt"))
         torch.save(val_inds, osp.join(self.index_cache_path, "val_split.pt"))
