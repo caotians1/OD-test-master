@@ -19,4 +19,4 @@ cp -r  ~/projects/rpp-bengioy/caotians/data/pcam $SLURM_TMPDIR/data
 source $SLURM_TMPDIR/env/temp/bin/activate
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
 export DISABLE_TQDM="True"
-python setup/DRDTrain2.py --root_path=workspace/datasets-$SLURM_JOBID --exp="PCAMDense" --batch-size=64 --no-visualize --save --workers=8
+python setup/PCAMTrain.py --root_path=workspace/datasets-$SLURM_JOBID --exp="PCAMDense" --batch-size=64 --no-visualize --save --workers=8
