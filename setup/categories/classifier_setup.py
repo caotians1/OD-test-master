@@ -33,6 +33,7 @@ def get_classifier_config(args, model, dataset, balanced=False):
             y_train.append(y.numpy())
         y_train = np.array(y_train)
         class_sample_count = np.array([len(np.where(y_train == t)[0]) for t in np.unique(y_train)])
+        print(class_sample_count)
         weight = 1. / class_sample_count
         samples_weight = np.array([weight[t] for t in y_train])
 
