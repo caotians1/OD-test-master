@@ -27,8 +27,8 @@ class PCAMBase(data.Dataset):
         assert split in ["train", "valid", "test"]
         if extract:
             self.extract()
-            self.h5x = h5py.File("camelyonpatch_level_2_split_%s_x.h5" % self.split)
-            self.h5y = h5py.File("camelyonpatch_level_2_split_%s_y.h5" % self.split)
+            self.h5x = h5py.File(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_x.h5" % self.split))
+            self.h5y = h5py.File(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_y.h5" % self.split))
             self.label_tensors = self.h5y['y']
 
     def __len__(self):

@@ -19,7 +19,7 @@ from datasets.PCAM import PCAM
 
 
 if __name__ == "__main__":
-    dataset = PCAM(root_path=os.path.join(args.root_path, "pcam"), extract=True)
+    dataset = PCAM(root_path=os.path.join(args.root_path, "pcam"), extract=True, downsample=224)
     model = PCAMDense("densenet121-a639ec97.pth", train_features=True)
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train(), balanced=True)
 
