@@ -232,11 +232,11 @@ class ALIModel(nn.Module):
         self.size = dims[2]
         self.LS = n_hidden
         # Create Model
-        self.DisX = DiscriminatorX(KS=DxKernel, ST=DxStride, DP=DxDepth)
-        self.DisZ = DiscriminatorZ(KS=DzKernel, ST=DzStride, DP=DzDepth, LS=self.LS)
-        self.DisXZ = DiscriminatorXZ(KS=DxzKernel, ST=DxzStride, DP=DxzDepth)
-        self.GenZ = Encoder(KS=EncKernel, ST=EncStride, DP=EncDepth, LS=self.LS)
-        self.GenX = Generator(latent_size=self.LS, KS=GenKernel, ST=GenStride, DP=GenDepth)
+        self.DisX = DiscriminatorX(KS=DxKernel, ST=DxStride, DP=DxDepth, nc=dims[0])
+        self.DisZ = DiscriminatorZ(KS=DzKernel, ST=DzStride, DP=DzDepth, LS=self.LS, nc=dims[0])
+        self.DisXZ = DiscriminatorXZ(KS=DxzKernel, ST=DxzStride, DP=DxzDepth, nc=dims[0])
+        self.GenZ = Encoder(KS=EncKernel, ST=EncStride, DP=EncDepth, LS=self.LS, nc=dims[0])
+        self.GenX = Generator(latent_size=self.LS, KS=GenKernel, ST=GenStride, DP=GenDepth, nc=dims[0])
         self.netid = 'Exp_%d_%d'%(dims[2], self.LS)
 
     def encode(self, x):
@@ -300,7 +300,7 @@ class Generator(nn.Module):
             output_pading = 0
             
             if i == len(KS)-1:
-                nnc = 1
+                nnc = self.nc
                 
             #Add ConvTranspose
             self.main.add_module("ConvT_"+str(i), torch.nn.ConvTranspose2d(lastdepth,nnc,kernel_size,stride,padding,output_pading,bias=False))
@@ -324,13 +324,13 @@ class Generator(nn.Module):
 
 #Image Encoder network to latent space (Gz(x))
 class Encoder(nn.Module):
-    def __init__(self,KS,ST,DP,LS):
+    def __init__(self,KS,ST,DP,LS, nc):
         super(Encoder, self).__init__()
         
         
         #Sequential model        
         self.main = torch.nn.Sequential()
-        lastdepth = 1 #This is the number of color (1)
+        lastdepth = nc #This is the number of color (1)
         nnc = 1
         for i in range(len(KS)):
             
@@ -360,11 +360,11 @@ class Encoder(nn.Module):
 
 #Discriminator X (Take an image and discriminate it) Dx(x)
 class DiscriminatorX(nn.Module):
-    def __init__(self,KS,ST,DP):
+    def __init__(self,KS,ST,DP, nc):
         super(DiscriminatorX, self).__init__()
         
         self.main = torch.nn.Sequential()
-        lastdepth = 1
+        lastdepth = nc
         nnc = 1
         dp =0.5 #Dropout rate is 0.5 for first
         for i in range(len(KS)):
@@ -396,7 +396,7 @@ class DiscriminatorX(nn.Module):
     
 #Discriminator for Latent Space (Dz(z))
 class DiscriminatorZ(nn.Module):
-    def __init__(self,KS,ST,DP,LS):
+    def __init__(self,KS,ST,DP,LS, nc):
         super(DiscriminatorZ, self).__init__()
         
         self.main = torch.nn.Sequential()
@@ -430,7 +430,7 @@ class DiscriminatorZ(nn.Module):
 
 
 class DiscriminatorXZ(nn.Module):
-    def __init__(self,KS,ST,DP):
+    def __init__(self,KS,ST,DP, nc):
         super(DiscriminatorXZ, self).__init__()
         
         self.main = torch.nn.Sequential()

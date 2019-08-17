@@ -35,6 +35,14 @@ parser.add_argument('--cuda-device', type=int, default=0, help='Select cuda devi
 parser.add_argument('--force-train-h', default=False, action='store_true', help='Whether should forcibly train H or just reuse.')
 parser.add_argument("--force-run", default=False, action='store_true', help='Force run the evaluation experiment?')
 
+#ALI args
+parser.add_argument("--random_label", default=False, type=bool)
+parser.add_argument("--min_loss_g",default=0.01, type=float)
+parser.add_argument("--max_loss_g",default=5, type=float)
+parser.add_argument("--lr", default=1e-4, type=float)
+parser.add_argument("--beta1", default=0.5, type=float)
+parser.add_argument("--beta2", default=1e-3, type=float)
+
 args = parser.parse_args()
 args.experiment_id = args.exp
 
