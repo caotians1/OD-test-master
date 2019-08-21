@@ -10,7 +10,7 @@ import subprocess
 from PIL import Image
 from zipfile import ZipFile
 import gzip
-import h5py
+
 
 class PCAMBase(data.Dataset):
     def __init__(self, source_dir, split, imsize=96, transforms=None,
@@ -27,15 +27,16 @@ class PCAMBase(data.Dataset):
         assert split in ["train", "valid", "test"]
         if extract:
             self.extract()
-            self.h5x = h5py.File(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_x.h5" % self.split), mode='r', swmr=True)
-            self.h5y = h5py.File(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_y.h5" % self.split), mode='r', swmr=True)
-            self.label_tensors = self.h5y['y']
+            #self.h5x = h5py.File(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_x.h5" % self.split), mode='r', swmr=True)
+            #self.h5y = h5py.File(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_y.h5" % self.split), mode='r', swmr=True)
+            self.x = np.load(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_x.npy" % self.split))
+            self.label_tensors = np.load(osp.join(self.source_dir, "camelyonpatch_level_2_split_%s_y.npy" % self.split))
 
     def __len__(self):
         return len(self.label_tensors)
 
     def __getitem__(self, item):
-        x = self.h5x['x'][item]
+        x = self.x[item]
         label = torch.LongTensor(self.label_tensors[item]).squeeze()
         if self.to_gray:
             img = self.transforms(transforms.ToPILImage()(x).convert('L'))
