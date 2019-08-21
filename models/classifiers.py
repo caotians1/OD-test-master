@@ -555,6 +555,38 @@ class NIHChestVGG(nn.Module):
         config['max_epoch'] = 120
         return config
 
+class PADDense(nn.Module):
+    def __init__(self, pretrained_weights_path=None, train_features=True):
+        super(PADDense, self).__init__()
+        self.train_features = train_features
+        self.densenet121 = Densenet.densenet121(pretrained=False)
+        self.load_state_dict(torch.load(pretrained_weights_path), strict=False)
+        self.densenet121.features[0] = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
+        feature_dim = self.densenet121.classifier.in_features
+        self.densenet121.classifier =nn.Linear(feature_dim, 2)
+
+    def forward(self, x, softmax=True):
+        output = self.densenet121(x)
+        if softmax:
+            return F.log_softmax(output, dim=1)
+        else:
+            return output
+
+    def output_size(self):
+        return torch.LongTensor([1,2])
+
+    def train_config(self):
+        config = {}
+        if self.train_features:
+            config['optim'] = optim.Adam(
+                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-1}, {'params':self.densenet121.features.parameters()}],
+                lr=1e-1)
+        else:
+            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
+        config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 30, gamma=0.1)
+        config['max_epoch'] = 100
+        return config
+
 class DRDDense(nn.Module):
     def __init__(self, pretrained_weights_path=None, train_features=False):
         super(DRDDense, self).__init__()

@@ -17,5 +17,5 @@ from datasets.NIH_Chest import NIHChestBinaryTrainSplit
 if __name__ == "__main__":
     dataset = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "NIHCC"), binary=True)
     model = NIHDenseBinary("mono_model.pth.tar")
-    CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train())
+    CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train(), balanced=True)
 

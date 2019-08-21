@@ -44,7 +44,7 @@ if __name__ == "__main__":
         criterion = nn.BCELoss()
         for epoch in range(1, 10 + 1):
             model.train()
-            with tqdm(total=len(dataset), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
+            with tqdm(total=len(dataloader), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
                 for i, (x, y) in enumerate(dataloader):
                     pbar.update()
                     batchsize = x.shape[0]
