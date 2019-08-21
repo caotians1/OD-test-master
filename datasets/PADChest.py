@@ -245,7 +245,7 @@ class PADChestPED(PADChest):
 
 class PADChestSVBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir,
-                 index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images-64",
+                 index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images-299",
                  imsize=224, transforms=None, binary=False, to_rgb=False, download=False, extract=True):
         super(PADChestSVBase,self).__init__()
         self.index_cache_path = index_cache_path

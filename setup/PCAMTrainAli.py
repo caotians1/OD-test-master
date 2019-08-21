@@ -42,7 +42,7 @@ if __name__ == "__main__":
         optimizerD = optim.Adam([{'params': model.DisZ.parameters()}, {'params': model.DisX.parameters()},
                                  {'params': model.DisXZ.parameters()}], lr=args.lr, betas=(args.beta1, args.beta2))
         criterion = nn.BCELoss()
-        for epoch in range(1, 10 + 1):
+        for epoch in range(1, 100 + 1):
             model.train()
             with tqdm(total=len(dataloader), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
                 for i, (x, y) in enumerate(dataloader):
