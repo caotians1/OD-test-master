@@ -11,10 +11,10 @@ from PIL import Image
 from zipfile import ZipFile
 
 
-class IDCBase(data.Dataset):
-    def __init__(self, index_cache_path, source_dir, split, image_dir="images", imsize=224, transforms=None,
+class RIGABase(data.Dataset):
+    def __init__(self, index_cache_path, source_dir, split, image_dir="images_224", imsize=224, transforms=None,
                  to_gray=False, download=False, extract=True):
-        super(IDCBase,self).__init__()
+        super(RIGABase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
         self.split = split
@@ -60,9 +60,12 @@ class IDCBase(data.Dataset):
     def extract(self):
         if os.path.exists(os.path.join(self.source_dir, self.image_dir)):
             return
-        with ZipFile(os.path.join(self.source_dir, 'IDC_regular_ps50_idx5.zip'), 'r') as zipObj:
-            zipObj.extractall(os.path.join(self.source_dir, self.image_dir))
-        return
+        import tarfile
+        tarsplits_list = ["images-224.tar.gz",
+                            ]
+        for tar_split in tarsplits_list:
+            with tarfile.open(os.path.join(self.source_dir, tar_split)) as tar:
+                tar.extractall(os.path.join(self.source_dir, self.image_dir))
 
     def generate_index(self):
         """
@@ -78,14 +81,14 @@ class IDCBase(data.Dataset):
         dir_level = len(os.path.join(self.source_dir, self.image_dir).split(split_char))
         for (dirpath, dirnames, filenames) in os.walk(os.path.join(self.source_dir, self.image_dir)):
             for filename in filenames:
-                if '.png' in filename:
+                if '.jpg' in filename:
                     dir_strs = dirpath.split(split_char)[dir_level:]
                     if len(dir_strs) > 0:
                         dir_strs = osp.join(*dir_strs)
                         img_list.append(os.path.join(dir_strs, filename))
                     else:
                         img_list.append(filename)
-                    label_list.append(int(filename.split('.')[0][-1]))
+                    label_list.append(1)
 
         label_tensors = torch.LongTensor(label_list)
         return {'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list,
@@ -105,18 +108,18 @@ class IDCBase(data.Dataset):
         torch.save(test_inds, osp.join(self.index_cache_path, "test_split.pt"))
         return
 
-class IDC(AbstractDomainInterface):
+class RIGA(AbstractDomainInterface):
 
-    dataset_path = "IDC"
-    def __init__(self, root_path="./workspace/datasets/IDC", downsample=None, shrink_channels=False, test_length=None, download=False,
+    dataset_path = "RIGA-dataset"
+    def __init__(self, root_path="./workspace/datasets/RIGA-dataset", downsample=None, shrink_channels=False, test_length=None, download=False,
                  extract=True, doubledownsample=None):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
          is removed from indices..
         """
-        self.name = "IDC"
-        super(IDC, self).__init__()
+        self.name = "RIGA"
+        super(RIGA, self).__init__()
         self.downsample = downsample
         self.shrink_channels=shrink_channels
         self.max_l = test_length
@@ -138,11 +141,11 @@ class IDC(AbstractDomainInterface):
                                             transforms.ToTensor()])
             self.image_size = (224, 224)
 
-        self.ds_train = IDCBase(cache_path, source_path, "train", transforms=transform,
+        self.ds_train = RIGABase(cache_path, source_path, "train", transforms=transform,
                                      to_gray=shrink_channels, download=download, extract=extract)
-        self.ds_valid = IDCBase(cache_path, source_path, "val", transforms=transform,
+        self.ds_valid = RIGABase(cache_path, source_path, "val", transforms=transform,
                                 to_gray=shrink_channels, download=download, extract=extract)
-        self.ds_test = IDCBase(cache_path, source_path, "test", transforms=transform,
+        self.ds_test = RIGABase(cache_path, source_path, "test", transforms=transform,
                                to_gray=shrink_channels, download=download, extract=extract)
         if extract:
             self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
@@ -153,7 +156,7 @@ class IDC(AbstractDomainInterface):
             self.D2_test_ind = self.get_filtered_inds(self.ds_test)
 
 
-    def get_filtered_inds(self, basedata: IDCBase, shuffle=False, max_l=None):
+    def get_filtered_inds(self, basedata: RIGABase, shuffle=False, max_l=None):
         output_inds = torch.arange(0, len(basedata)).int()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
@@ -199,3 +202,12 @@ class IDC(AbstractDomainInterface):
                                        transforms.ToTensor(),
                                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                                        ])
+
+if __name__ == "__main__":
+    data1 = RIGA("workspace\\datasets\\RIGA-dataset")
+    d1 = data1.get_D1_train()
+    print(len(d1))
+    for i in range(10):
+        x, y = d1[i]
+
+
