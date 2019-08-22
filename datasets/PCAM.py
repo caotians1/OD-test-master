@@ -84,18 +84,22 @@ class PCAM(AbstractDomainInterface):
             transform_list = []
         if downsample is not None:
             print("downsampling to", downsample)
-            transform = transforms.Compose(transform_list +
-                                           [transforms.Resize((downsample, downsample)),
-                                            transforms.ToTensor(),
-                                            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                 std=[0.229, 0.224, 0.225]),
-                                            ])
+            transform_list += [transforms.Resize((downsample, downsample)),
+                                            transforms.ToTensor(),]
+            if self.shrink_channels:
+                transform_list += [transforms.Grayscale(),]
+            else:
+                transform_list += [transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),]
+            transform = transforms.Compose(transform_list)
             self.image_size = (downsample, downsample)
         else:
-            transform = transforms.Compose(transform_list + [transforms.ToTensor(),
-                                                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                                                  std=[0.229, 0.224, 0.225]),
-                                                             ])
+            transform_list += [transforms.Resize((224, 224)),
+                               transforms.ToTensor(), ]
+            if self.shrink_channels:
+                transform_list += [transforms.Grayscale(),]
+            else:
+                transform_list += [transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),]
+            transform = transforms.Compose(transform_list)
             self.image_size = (224, 224)
 
         self.ds_train = PCAMBase(source_path, "train", imsize=self.image_size[0], transforms=transform,
@@ -157,3 +161,14 @@ class PCAM(AbstractDomainInterface):
                                        transforms.Resize((target, target)),
                                        transforms.ToTensor(),
                                        ])
+
+
+class PCAMGray(PCAM):
+    dataset_path = "pcam"
+    def __init__(self, root_path="./workspace/datasets/pcam", downsample=None, shrink_channels=False, test_length=None,
+                 download=False,
+                 extract=True, doubledownsample=None):
+        self.name = "PCAMGray"
+        shrink_channels = True
+        super(PCAMGray, self).__init__(root_path, downsample, shrink_channels, test_length, download, extract,
+                                       doubledownsample)
