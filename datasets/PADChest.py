@@ -10,7 +10,7 @@ from PIL import Image
 import numpy as np
 
 N_CLASS = 5
-N_CLASS_SV = 14
+N_CLASS_SV = 15
 CLASSES = ["PA", "AP", "L", "AP_horizontal", "PED" ]
 SVCLASSES = ['pleural effusion', 'emphysema', 'pneumonia', 'cardiomegaly', 'pneumothorax', 'mass', 'infiltrates', 'normal',
            'nodule', 'consolidation', 'atelectasis', 'pulmonary edema', 'pulmonary fibrosis', 'hiatal hernia', 'pleural thickening']
@@ -291,8 +291,8 @@ class PADChestSVBase(data.Dataset):
         if os.path.exists(os.path.join(self.source_dir, self.image_dir)):
             return
         import tarfile
-        tarsplits_list = ["images_01.tar.gz",
-                     ]
+        tarsplits_list = ["images-64.tar",
+                            ]
         for tar_split in tarsplits_list:
             with tarfile.open(os.path.join(self.source_dir, tar_split)) as tar:
                 tar.extractall(os.path.join(self.source_dir, self.image_dir))
@@ -376,22 +376,22 @@ class PADChestSV(AbstractDomainInterface):
             self.D2_test_ind = self.get_filtered_inds(self.ds_test, shuffle=True)
 
 
-    def get_filtered_inds(self, basedata: PADChestSVBase, shuffle=False, max_l=None):
+    def get_filtered_inds(self, basedata, shuffle=False, max_l=None):
         if not (self.leave_out_classes == () and self.keep_in_classes is None):
-            leave_out_mask_label = torch.zeros(N_CLASS).int()
+            leave_out_mask_label = torch.zeros(N_CLASS_SV).int()
             for cla in self.leave_out_classes:
-                ii = CLASSES.index(cla)
+                ii = SVCLASSES.index(cla)
                 leave_out_mask_label[ii] = 1
             if self.keep_in_classes is None:
-                keep_in_mask_label = torch.ones(N_CLASS).int()
+                keep_in_mask_label = torch.ones(N_CLASS_SV).int()
             else:
-                keep_in_mask_label = torch.zeros(N_CLASS).int()
+                keep_in_mask_label = torch.zeros(N_CLASS_SV).int()
                 for cla in self.keep_in_classes:
-                    ii = CLASSES.index(cla)
+                    ii = SVCLASSES.index(cla)
                     keep_in_mask_label[ii] = 1
             keep_inds = []
-            for seq_ind, base_ind in enumerate(basedata.split_inds):
-                label = basedata.label_tensors[base_ind].int()
+            for seq_ind, base_ind in enumerate(basedata.indices):
+                label = basedata.dataset.label_tensors[base_ind].int()
                 if torch.sum(label * leave_out_mask_label) == 0 and torch.sum(label * keep_in_mask_label) > 0:
                     keep_inds.append(seq_ind)
                 else:
