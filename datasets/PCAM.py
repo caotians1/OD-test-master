@@ -45,7 +45,7 @@ class PCAMBase(data.Dataset):
         return img, label
 
     def extract(self):
-        if os.path.exists(os.path.join(self.source_dir, "camelyonpatch_level_2_split_test_x.h5")):
+        if os.path.exists(os.path.join(self.source_dir, "camelyonpatch_level_2_split_test_x.npy")):
             return
         import shutil
         tarsplits_list = ["camelyonpatch_level_2_split_test_x.h5.gz",
