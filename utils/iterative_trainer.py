@@ -144,6 +144,12 @@ class IterativeTrainer(object):
                             acc = (pred == target.long()).float().view(-1).sum().item()
                             logger.log('%s_accuracy'%phase_name, acc, epoch, i)
                             acc = acc/target.numel()
+                        if 'num_classes' in self.args:
+                            nc = self.args.num_classes
+                            confusion_matrix = torch.zeros(nc, nc)
+                            for t, p in zip(target.view(-1), pred.view(-1)):
+                                confusion_matrix[t.long(), p.long()] += 1
+                            print(confusion_matrix.diag() / confusion_matrix.sum(1))
                         message = '%s Accuracy %.2f'%(message, acc)
                         try:
                             roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")

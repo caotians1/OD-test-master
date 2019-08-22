@@ -360,7 +360,7 @@ class PADChestSV(AbstractDomainInterface):
                                             transforms.ToTensor()])
             self.image_size = (224, 224)
 
-        self.ds_all = PADChestSVBase(cache_path, source_path, transforms=transform,
+        self.ds_all = PADChestSVBase(cache_path, source_path, transforms=transform, binary=self.binary,
                                    to_rgb=expand_channels, download=download, extract=extract)
         n_train = int(0.8 * len(self.ds_all))
         n_val = int(0.1 * len(self.ds_all))
@@ -396,9 +396,9 @@ class PADChestSV(AbstractDomainInterface):
                     keep_inds.append(seq_ind)
                 else:
                     pass
-            output_inds = torch.Tensor(keep_inds).int()
+            output_inds = torch.Tensor(keep_inds).long()
         else:
-            output_inds = torch.arange(0, len(basedata)).int()
+            output_inds = torch.arange(0, len(basedata)).long()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
         if max_l is not None:

@@ -14,7 +14,7 @@ mkdir -p $SLURM_TMPDIR/data
 cp -r ~/Venv/temp/* $SLURM_TMPDIR/env/temp
 cp -r  ~/projects/rpp-bengioy/caotians/data/PADChest $SLURM_TMPDIR/data
 
-tar -xzf $SLURM_TMPDIR/data/PADChest/images_299.tar.gz -C $SLURM_TMPDIR/data/PADChest
+tar -xzf $SLURM_TMPDIR/data/PADChest/images-299.tar.gz -C $SLURM_TMPDIR/data/PADChest
 
 source $SLURM_TMPDIR/env/temp/bin/activate
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID

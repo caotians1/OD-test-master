@@ -17,5 +17,6 @@ from datasets.PADChest import PADChestBinaryTrainSplit
 if __name__ == "__main__":
     dataset = PADChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "PADChest"), binary=True, downsample=224)
     model = PADDense("densenet121-a639ec97.pth", train_features=True)
+    args.num_classes = 2
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train(), balanced=True)
 
