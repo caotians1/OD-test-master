@@ -19,4 +19,4 @@ tar -xzf $SLURM_TMPDIR/data/PADChest/images-299.tar.gz -C $SLURM_TMPDIR/data/PAD
 source $SLURM_TMPDIR/env/temp/bin/activate
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
 export DISABLE_TQDM="True"
-python setup/PADTrain_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp="PADChestDense" --batch-size=64 --no-visualize --save --workers=8
+python setup/PAD/PADTrain_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp="PADChestDense" --batch-size=64 --no-visualize --save --workers=8
