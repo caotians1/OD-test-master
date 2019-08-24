@@ -22,17 +22,17 @@ class DRDDenseCustom(DRDDense):
         config = {}
         if self.train_features:
             config['optim'] = optim.Adam(
-                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-1}, {'params':self.densenet121.features.parameters()}],
-                lr=1e-1)
+                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-3}, {'params':self.densenet121.features.parameters()}],
+                lr=1e-3)
         else:
-            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
-        config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 30, gamma=0.1)
-        config['max_epoch'] = 900
+            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-3, )
+        config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 30, gamma=0.5)
+        config['max_epoch'] = 300
         return config
 
 if __name__ == "__main__":
     dataset = DRD(root_path=os.path.join(args.root_path, "diabetic-retinopathy-detection"))
-    model = DRDDense("densenet121-a639ec97.pth", train_features=True)
+    model = DRDDenseCustom(train_features=True)
     args.num_classes = 2
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train(), balanced=True)
 
