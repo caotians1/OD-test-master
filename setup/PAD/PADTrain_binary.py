@@ -10,7 +10,7 @@ import models as Models
 import global_vars as Global
 from utils.args import args
 
-import categories.classifier_setup as CLSetup
+import setup.categories.classifier_setup as CLSetup
 from models.classifiers import PADDense
 from datasets.PADChest import PADChestBinaryTrainSplit
 
