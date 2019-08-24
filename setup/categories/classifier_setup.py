@@ -41,11 +41,26 @@ def get_classifier_config(args, model, dataset, balanced=False):
         sampler = WeightedRandomSampler(samples_weight.type('torch.DoubleTensor'), len(samples_weight))
         train_loader = DataLoader(train_ds, batch_size=args.batch_size, num_workers=args.workers,
                                   pin_memory=True, sampler=sampler)
+
+        y_val = []
+        for x, y in valid_ds:
+            y_val.append(y.numpy())
+            y_val = np.array(y_val)
+        class_sample_count = np.array([len(np.where(y_val == t)[0]) for t in np.unique(y_val)])
+        print(class_sample_count)
+        weight = 1. / class_sample_count
+        samples_weight = np.array([weight[t] for t in y_val])
+
+        samples_weight = torch.from_numpy(samples_weight)
+        sampler = WeightedRandomSampler(samples_weight.type('torch.DoubleTensor'), len(samples_weight))
+        valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers,
+                                  pin_memory=True, sampler=sampler)
+
     else:
         train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.workers,
                                   pin_memory=True)
 
-    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
+        valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
     all_loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.workers, pin_memory=True)
 
     # Set up the criterion
