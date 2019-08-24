@@ -33,5 +33,6 @@ class DRDDenseCustom(DRDDense):
 if __name__ == "__main__":
     dataset = DRD(root_path=os.path.join(args.root_path, "diabetic-retinopathy-detection"))
     model = DRDDense("densenet121-a639ec97.pth", train_features=True)
+    args.num_classes = 2
     CLSetup.train_classifier(args, model=model, dataset=dataset.get_D1_train(), balanced=True)
 

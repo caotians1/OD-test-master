@@ -579,10 +579,10 @@ class PADDense(nn.Module):
         config = {}
         if self.train_features:
             config['optim'] = optim.Adam(
-                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-1}, {'params':self.densenet121.features.parameters()}],
-                lr=1e-1)
+                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-3}, {'params':self.densenet121.features.parameters()}],
+                lr=1e-3)
         else:
-            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
+            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-3, )
         config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 30, gamma=0.1)
         config['max_epoch'] = 100
         return config
@@ -610,10 +610,10 @@ class DRDDense(nn.Module):
         config = {}
         if self.train_features:
             config['optim'] = optim.Adam(
-                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-2}, {'params':self.densenet121.features.parameters()}],
-                lr=1e-2)
+                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-3}, {'params':self.densenet121.features.parameters()}],
+                lr=1e-3)
         else:
-            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-1, )
+            config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-3, )
         config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 10, gamma=0.5)
         config['max_epoch'] = 100
         return config

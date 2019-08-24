@@ -22,8 +22,8 @@ class DRDDenseCustom(DRDDense):
         config = {}
         if self.train_features:
             config['optim'] = optim.Adam(
-                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-1}, {'params':self.densenet121.features.parameters()}],
-                lr=1e-1)
+                [{'params':self.densenet121.classifier.parameters(), 'lr':1e-3}, {'params':self.densenet121.features.parameters()}],
+                lr=1e-3)
         else:
             config['optim'] = optim.Adam(self.densenet121.classifier.parameters(), lr=1e-3, )
         config['scheduler'] = optim.lr_scheduler.StepLR(config['optim'], 30, gamma=0.1)
