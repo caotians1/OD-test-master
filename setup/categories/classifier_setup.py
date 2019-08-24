@@ -45,7 +45,7 @@ def get_classifier_config(args, model, dataset, balanced=False):
         y_val = []
         for x, y in valid_ds:
             y_val.append(y.numpy())
-            y_val = np.array(y_val)
+        y_val = np.array(y_val)
         class_sample_count = np.array([len(np.where(y_val == t)[0]) for t in np.unique(y_val)])
         print(class_sample_count)
         weight = 1. / class_sample_count

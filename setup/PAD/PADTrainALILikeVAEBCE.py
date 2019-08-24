@@ -9,11 +9,11 @@ from utils.args import args
 
 import categories.ae_setup as AESetup
 from models.autoencoders import *
-from datasets.PADChest import PADChestL
+from datasets.PADChest import PADChestBinaryTrainSplit
 
 if __name__ == "__main__":
-    dataset = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "NIHCC"), binary=True, expand_channels=False, downsample=64)
+    dataset =  PADChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "PADChest"), binary=True, expand_channels=False, downsample=64)
     #model = Generic_AE(dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512)
-    model = ALILikeAE(dims=(1, 64, 64))
-    AESetup.train_autoencoder(args, model=model, dataset=dataset.get_D1_train(), BCE_Loss=True)
+    model = ALILikeVAE(dims=(1, 64, 64))
+    AESetup.train_variational_autoencoder(args, model=model, dataset=dataset.get_D1_train(), BCE_Loss=True)
 
