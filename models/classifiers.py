@@ -560,7 +560,8 @@ class PADDense(nn.Module):
         super(PADDense, self).__init__()
         self.train_features = train_features
         self.densenet121 = Densenet.densenet121(pretrained=False)
-        self.load_state_dict(torch.load(pretrained_weights_path), strict=False)
+        if pretrained_weights_path is not None:
+            self.load_state_dict(torch.load(pretrained_weights_path), strict=False)
         self.densenet121.features[0] = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         feature_dim = self.densenet121.classifier.in_features
         self.densenet121.classifier =nn.Linear(feature_dim, 2)
@@ -592,7 +593,8 @@ class DRDDense(nn.Module):
         super(DRDDense, self).__init__()
         self.train_features = train_features
         self.densenet121 = Densenet.densenet121(pretrained=False)
-        self.load_state_dict(torch.load(pretrained_weights_path), strict=False)
+        if pretrained_weights_path is not None:
+            self.load_state_dict(torch.load(pretrained_weights_path), strict=False)
         feature_dim = self.densenet121.classifier.in_features
         self.densenet121.classifier =nn.Linear(feature_dim, 2)
 
