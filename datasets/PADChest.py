@@ -335,7 +335,7 @@ class PADChestSV(AbstractDomainInterface):
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
          is removed from indices..
         """
-        self.name = "PADChestSV"
+        self.name = "PADChest"
         super(PADChestSV, self).__init__()
         self.leave_out_classes = leave_out_classes
         self.keep_in_classes = keep_in_classes
