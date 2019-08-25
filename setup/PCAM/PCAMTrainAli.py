@@ -7,14 +7,12 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0,parentdir)
 
 import models as Models
-import global_vars as Global
 from utils.args import args
-import torchvision
 import torch.nn as nn
 from torch.utils.data.sampler import WeightedRandomSampler
-import numpy as np
+
 from torch import optim
-import categories.classifier_setup as CLSetup
+
 from models.ALImodel import ALIModel
 from datasets.PCAM import PCAM
 from utils.logger import Logger

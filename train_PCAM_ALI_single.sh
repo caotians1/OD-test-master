@@ -20,4 +20,4 @@ source $SLURM_TMPDIR/env/temp/bin/activate
 ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
 export DISABLE_TQDM="True"
 
-python setup/PCAMTrainAli.py --root_path=workspace/datasets-$SLURM_JOBID --exp=PCAMDense_beta2_0.1 --batch-size=64 --no-visualize --save --workers=8 --beta2=0.1
+python setup/PCAM/PCAMTrainAli.py --root_path=workspace/datasets-$SLURM_JOBID --exp=PCAMDense_beta2_0.1 --batch-size=64 --no-visualize --save --workers=8 --beta2=0.1
