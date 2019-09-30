@@ -95,7 +95,13 @@ class BinaryClassifier(ProbabilityThreshold):
         config.stochastic_gradient = True
         config.visualize = not self.args.no_visualize
         config.model = model
-        config.logger = Logger()
+
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+
+        config.logger = Logger(h_parent)
         config.optim = optim.Adam(model.parameters(), lr=1e-3)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=5, threshold=1e-2, min_lr=1e-6, factor=0.1, verbose=True)
         config.max_epoch = 30

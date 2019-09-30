@@ -22,9 +22,10 @@ if __name__ == "__main__":
     dataset = PCAM(root_path=os.path.join(args.root_path, "pcam"), extract=True, downsample=64).get_D1_train()
     dataloader = torch.utils.data.DataLoader(dataset, args.batch_size, True, num_workers=args.workers, pin_memory=True)
     model = ALIModel(dims=(3,64,64)).cuda()
-    logger = Logger()
     home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset.name, model_setup=True,
                                           suffix_str='base0')
+    logger = Logger(home_path)
+
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
     if not os.path.isdir(home_path):

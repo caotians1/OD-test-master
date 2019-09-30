@@ -1,6 +1,6 @@
 import numpy as np
 import re
-
+from tensorboardX import SummaryWriter
 
 class Measure:
     measurements = []
@@ -136,8 +136,10 @@ class Measure:
 class Logger:
     measures = None
 
-    def __init__(self):
+    def __init__(self, logdir):
         self.measures = {}
+        self.writer = SummaryWriter(logdir=logdir)
+        self.logdir = logdir
 
     def log(self, measure_name, measurement, epoch, iteration=None):
         measure = None
@@ -146,7 +148,7 @@ class Logger:
         else:
             measure = Measure(measure_name)
             self.measures[measure_name] = measure
-
+        #self.writer.add_scalar(measure_name, measurement, epoch)
         measure.add_measurement(measurement, epoch, iteration)
 
     def get_measure(self, measure_name):

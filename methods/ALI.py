@@ -60,7 +60,13 @@ class ALIReconstruction(ReconstructionThreshold):
         config.sigmoid_viz = self.default_model == 0
         config.model = model
         config.optim = None
-        config.logger = Logger()
+
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+
+        config.logger = Logger(h_parent)
 
         return config
 

@@ -34,7 +34,7 @@ def sample(model, batch_size, obs):
                 data[:, :, i, j] = out_sample.data[:, :, i, j]
     return rescaling_inv(data)
 
-def get_pcnn_config(args, model, dataset):
+def get_pcnn_config(args, model, home_path, dataset):
     print("Preparing training D1 for %s"%(dataset.name))
 
     sample_im, _ = dataset[0]
@@ -79,7 +79,7 @@ def get_pcnn_config(args, model, dataset):
     config.stochastic_gradient = True
     config.visualize = not args.no_visualize
     config.model = model
-    config.logger = Logger()
+    config.logger = Logger(home_path)
     config.sampler = lambda x: sample(x.model, 32, obs)
 
     config.optim = optim.Adam(model.parameters(), lr=1e-3)
@@ -104,7 +104,7 @@ def train_pixelcnn(args, model, dataset):
         os.makedirs(home_path)
 
     if not os.path.isfile(hbest_path+".done"):
-        config = get_pcnn_config(args, model, dataset)
+        config = get_pcnn_config(args, model, home_path, dataset)
         trainer = IterativeTrainer(config, args)
         print(colored('Training from scratch', 'green'))
         best_loss = 999999999

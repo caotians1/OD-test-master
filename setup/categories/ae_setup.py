@@ -12,10 +12,15 @@ import global_vars as Global
 from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
 from datasets import MirroredDataset
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 from models.autoencoders import VAE_Loss
 
-def get_ae_config(args, model, dataset, BCE_Loss):
+def get_ae_config(args, model, dataset, home_path, BCE_Loss):
     print("Preparing training D1 for %s"%(dataset.name))
 
     # 80%, 20% for local train+test
@@ -62,7 +67,7 @@ def get_ae_config(args, model, dataset, BCE_Loss):
     config.visualize = not args.no_visualize
     config.sigmoid_viz = BCE_Loss
     config.model = model
-    config.logger = Logger()
+    config.logger = Logger(home_path)
 
     config.optim = optim.Adam(model.parameters(), lr=1e-3)
     config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-3, min_lr=1e-6, factor=0.1, verbose=True)
@@ -76,7 +81,7 @@ def get_ae_config(args, model, dataset, BCE_Loss):
 
     return config
 
-def get_vae_config(args, model, dataset, BCE_Loss):
+def get_vae_config(args, model, dataset, home_path, BCE_Loss):
     print("Preparing training D1 for %s"%(dataset.name))
 
     # 80%, 20% for local train+test
@@ -119,7 +124,7 @@ def get_vae_config(args, model, dataset, BCE_Loss):
     config.visualize = not args.no_visualize
     config.sigmoid_viz = False
     config.model = model
-    config.logger = Logger()
+    config.logger = Logger(home_path)
 
     config.optim = optim.Adam(model.parameters(), lr=1e-3)
     config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-3, min_lr=1e-6, factor=0.1, verbose=True)
@@ -153,7 +158,7 @@ def train_autoencoder(args, model, dataset, BCE_Loss):
         os.makedirs(home_path)
 
     if not os.path.isfile(hbest_path+".done"):
-        config = get_ae_config(args, model, dataset, BCE_Loss=BCE_Loss)
+        config = get_ae_config(args, model, dataset, home_path, BCE_Loss=BCE_Loss)
         trainer = IterativeTrainer(config, args)
         print(colored('Training from scratch', 'green'))
         best_loss = 999999999
@@ -170,8 +175,22 @@ def train_autoencoder(args, model, dataset, BCE_Loss):
 
             train_loss = config.logger.get_measure('train_loss').mean_epoch()
             test_loss = config.logger.get_measure('test_loss').mean_epoch()
-
+            config.logger.writer.add_scalar('train_loss', train_loss, epoch)
+            config.logger.writer.add_scalar('test_loss', test_loss, epoch)
             config.scheduler.step(train_loss)
+
+            # vis in tensorboard
+            for (image, label) in config.valid_loader:
+                prediction = model(image.cuda()).data.cpu().squeeze().numpy()
+                N = min(prediction.shape[0], 5)
+                fig, ax = plt.subplots(N, 2)
+                image = image.data.squeeze().numpy()
+                for i in range(N):
+                    ax[i, 0].imshow(prediction[i])
+                    ax[i, 1].imshow(image[i])
+                config.logger.writer.add_figure('Vis', fig, epoch)
+                plt.close(fig)
+                break
 
             if config.visualize:
                 # Show the average losses for all the phases in one figure.
@@ -213,7 +232,7 @@ def train_variational_autoencoder(args, model, dataset, BCE_Loss=True):
         os.makedirs(home_path)
 
     if not os.path.isfile(hbest_path+".done"):
-        config = get_vae_config(args, model, dataset, BCE_Loss)
+        config = get_vae_config(args, model, dataset, home_path, BCE_Loss)
         trainer = IterativeTrainer(config, args)
         print(colored('Training from scratch', 'green'))
         best_loss = 999999999

@@ -62,6 +62,11 @@ class ProbabilityThreshold(AbstractMethodInterface):
 
         all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=self.args.workers, pin_memory=True)
 
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+
         # Set up the criterion
         criterion = nn.NLLLoss().to(self.args.device)
 
@@ -87,7 +92,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         config.optim = None
         config.autoencoder_target = False
         config.visualize = False
-        config.logger = Logger()
+        config.logger = Logger(logdir=h_parent)
         return config
 
     def propose_H(self, dataset):
@@ -171,6 +176,11 @@ class ProbabilityThreshold(AbstractMethodInterface):
         if hasattr(self.base_model, 'preferred_name'):
             base_model_name = self.base_model.preferred_name()
 
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+
         config.name = '_%s[%s](%s->%s)'%(self.__class__.__name__, base_model_name, self.args.D1, self.args.D2)
         config.train_loader = train_loader
         config.valid_loader = valid_loader
@@ -187,7 +197,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         config.model = model
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=0)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)
-        config.logger = Logger()
+        config.logger = Logger(logdir=h_parent)
         config.max_epoch = 10
 
         return config

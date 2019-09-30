@@ -12,7 +12,7 @@ from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
 from datasets import MirroredDataset
 
-def get_classifier_config(args, model, dataset, mid=0):
+def get_classifier_config(args, model, dataset, home_path, mid=0):
     print("Preparing training D1 for %s"%(dataset.name))
 
     # 80%, 20% for local train+test
@@ -56,7 +56,7 @@ def get_classifier_config(args, model, dataset, mid=0):
     config.stochastic_gradient = True
     config.visualize = not args.no_visualize
     config.model = model
-    config.logger = Logger()
+    config.logger = Logger(home_path)
 
     config.optim = optim.Adam(model.parameters(), lr=1e-3)
     config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-2, min_lr=1e-6, factor=0.1, verbose=True)
@@ -84,7 +84,7 @@ def train_classifier(args, model, dataset):
                 print("Skipping %s"%(colored(home_path, 'yellow')))
                 continue
 
-        config = get_classifier_config(args, model.__class__(), dataset, mid=mid)
+        config = get_classifier_config(args, model.__class__(), dataset, home_path, mid=mid)
 
         trainer = IterativeTrainer(config, args)
 

@@ -14,7 +14,7 @@ from datasets import MirroredDataset
 
 from methods.logistic_threshold import KWayLogisticLoss, KWayLogisticWrapper
 
-def get_KLclassifier_config(args, model, dataset):
+def get_KLclassifier_config(args, model, home_path, dataset):
     print("Preparing training D1 for %s"%(dataset.name))
 
     # 80%, 20% for local train+test
@@ -53,7 +53,7 @@ def get_KLclassifier_config(args, model, dataset):
     config.stochastic_gradient = True
     config.visualize = not args.no_visualize
     config.model = klmodel
-    config.logger = Logger()
+    config.logger = Logger(home_path)
 
     config.optim = optim.Adam(klmodel.parameters(), lr=1e-3)
     config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-2, min_lr=1e-6, factor=0.1, verbose=True)
@@ -68,9 +68,9 @@ def get_KLclassifier_config(args, model, dataset):
     return config
 
 def train_classifier(args, model, dataset):
-    config = get_KLclassifier_config(args, model, dataset)
-
     home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset.name, model_setup=True, suffix_str='KLogistic')
+    config = get_KLclassifier_config(args, model, home_path, dataset)
+
     hbest_path = os.path.join(home_path, 'model.best.pth')
 
     if not os.path.isdir(home_path):

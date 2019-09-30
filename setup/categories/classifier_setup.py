@@ -86,7 +86,9 @@ def get_classifier_config(args, model, dataset, balanced=False):
     config.stochastic_gradient = True
     config.visualize = not args.no_visualize
     config.model = model
-    config.logger = Logger()
+    home_path = Models.get_ref_model_path(args, config.model.__class__.__name__, dataset.name, model_setup=True,
+                                          suffix_str='base0')
+    config.logger = Logger(home_path)
 
     config.optim = optim.Adam(model.parameters(), lr=1e-3)
     config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-2, min_lr=1e-6, factor=0.1, verbose=True)

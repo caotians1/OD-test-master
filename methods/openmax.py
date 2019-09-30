@@ -25,6 +25,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import os.path as path
 
 from methods import AbstractMethodInterface, AbstractModelWrapper, SVMLoss
 from methods.base_threshold import ProbabilityThreshold
@@ -297,7 +298,11 @@ class OpenMax(ProbabilityThreshold):
         config.model = model
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=1.0/len(train_ds))
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)
-        config.logger = Logger()
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+        config.logger = Logger(h_parent)
         config.max_epoch = 100
 
         return config

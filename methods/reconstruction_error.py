@@ -113,7 +113,11 @@ class ReconstructionThreshold(ProbabilityThreshold):
         config.sigmoid_viz = self.default_model == 0
         config.model = model
         config.optim = None
-        config.logger = Logger()
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+        config.logger = Logger(h_parent)
 
         return config
 
@@ -211,7 +215,12 @@ class ReconstructionThreshold(ProbabilityThreshold):
         config.model = model
         config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=0)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)
-        config.logger = Logger()
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+        config.logger = Logger(h_parent)
+
         config.max_epoch = 30
 
         return config
