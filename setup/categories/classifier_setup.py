@@ -14,6 +14,9 @@ from utils.logger import Logger
 from datasets import MirroredDataset
 from torch.utils.data.sampler import WeightedRandomSampler
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 def get_classifier_config(args, model, dataset, balanced=False):
     print("Preparing training D1 for %s"%(dataset.name))
@@ -139,6 +142,8 @@ def train_classifier(args, model, dataset, balanced=False):
                 config.logger.visualize_average('LRs', trainer.visdom)
 
             test_average_acc = config.logger.get_measure('test_accuracy').mean_epoch()
+            config.logger.writer.add_scalar('train_acc', train_average_acc, epoch)
+            config.logger.writer.add_scalar('test_acc', test_average_acc, epoch)
             print("Test Accuracy", test_average_acc)
             # Save the logger for future reference.
             torch.save(config.logger.measures, os.path.join(home_path, 'logger.pth'))

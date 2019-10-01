@@ -250,7 +250,22 @@ def train_variational_autoencoder(args, model, dataset, BCE_Loss=True):
             train_loss = config.logger.get_measure('train_loss').mean_epoch()
             test_loss = config.logger.get_measure('test_loss').mean_epoch()
 
+            config.logger.writer.add_scalar('train_loss', train_loss, epoch)
+            config.logger.writer.add_scalar('test_loss', test_loss, epoch)
             config.scheduler.step(train_loss)
+
+            # vis in tensorboard
+            for (image, label) in config.valid_loader:
+                prediction = model(image.cuda()).data.cpu().squeeze().numpy()
+                N = min(prediction.shape[0], 5)
+                fig, ax = plt.subplots(N, 2)
+                image = image.data.squeeze().numpy()
+                for i in range(N):
+                    ax[i, 0].imshow(prediction[i])
+                    ax[i, 1].imshow(image[i])
+                config.logger.writer.add_figure('Vis', fig, epoch)
+                plt.close(fig)
+                break
 
             if config.visualize:
                 # Show the average losses for all the phases in one figure.
