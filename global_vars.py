@@ -168,6 +168,7 @@ all_methods = {
     'mseaeknn':         KNN.MSEKNNSVM,
     'vaebceaeknn':         KNN.VAEBCEKNNSVM,
     'vaemseaeknn':         KNN.VAEMSEKNNSVM,
+    'svknn':            KNN.SVKNNSVM,
     'binclass':         BinClass.BinaryClassifier,
     'deep_ensemble':    DE.DeepEnsemble,
     'odin':             ODIN.ODIN,

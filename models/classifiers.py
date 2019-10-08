@@ -6,6 +6,17 @@ import torchvision.models.vgg as VGG
 import torchvision.models.resnet as Resnet
 import torchvision.models.densenet as Densenet
 
+
+class PartialForwardable(object):
+    def partial_forward(self, x):
+        if 'densenet121' in self.__dict__:
+            features = self.densenet121.features(x)
+            out = F.relu(features, inplace=True)
+            out = F.avg_pool2d(out, kernel_size=7, stride=1).view(features.size(0), -1)
+            return out
+        elif 'model' in self.__dict__:
+            return self.model.features(x).view(x.size(0), 1)
+
 class MNIST_VGG(nn.Module):
     """
         VGG-style MNIST.
@@ -445,7 +456,7 @@ class TinyImagenet_Resnet(nn.Module):
         return config
 
 
-class NIHDense(nn.Module):
+class NIHDense(nn.Module, PartialForwardable):
     def __init__(self):
         super(NIHDense, self).__init__()
         self.densenet121 = Densenet.densenet121(pretrained=True)
@@ -471,7 +482,7 @@ class NIHDense(nn.Module):
         return config
 
 
-class NIHDenseBinary(nn.Module):
+class NIHDenseBinary(nn.Module, PartialForwardable):
     def __init__(self, pretrained_weights_path=None, train_features=False):
         super(NIHDenseBinary, self).__init__()
         self.train_features = train_features
@@ -520,7 +531,7 @@ class NIHDenseBinary(nn.Module):
         return config
 
 
-class NIHChestVGG(nn.Module):
+class NIHChestVGG(nn.Module, PartialForwardable):
     def __init__(self):
         super(NIHChestVGG, self).__init__()
 
@@ -555,7 +566,7 @@ class NIHChestVGG(nn.Module):
         config['max_epoch'] = 120
         return config
 
-class PADDense(nn.Module):
+class PADDense(nn.Module, PartialForwardable):
     def __init__(self, pretrained_weights_path=None, train_features=True):
         super(PADDense, self).__init__()
         self.train_features = train_features
@@ -588,7 +599,7 @@ class PADDense(nn.Module):
         config['max_epoch'] = 100
         return config
 
-class DRDDense(nn.Module):
+class DRDDense(nn.Module, PartialForwardable):
     def __init__(self, pretrained_weights_path=None, train_features=False):
         super(DRDDense, self).__init__()
         self.train_features = train_features
@@ -620,7 +631,7 @@ class DRDDense(nn.Module):
         config['max_epoch'] = 100
         return config
 
-class PCAMDense(nn.Module):
+class PCAMDense(nn.Module, PartialForwardable):
     def __init__(self, pretrained_weights_path=None, train_features=False):
         super(PCAMDense, self).__init__()
         self.train_features = train_features
