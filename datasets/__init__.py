@@ -143,7 +143,48 @@ class AbstractDomainInterface(object):
         to this datasets for conformity in evaluation.
     """
     def conformity_transform(self):
-        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))        
+        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+
+    def __add__(self, other):
+        return ADISum(self, other)
+
+class ADISum(AbstractDomainInterface):
+    def __init__(self, src, other):
+        self.src = src
+        self.other = other
+        self.name = src.name + "+" + other.name
+        super(ADISum, self).__init__()
+
+    def get_D1_train(self):
+        d1_train1 = self.src.get_D1_train()
+        d1_train2 = self.other.get_D1_train()
+        return data.ConcatDataset([d1_train1, d1_train2])
+
+    def get_D1_valid(self):
+        d1_train1 = self.src.get_D1_valid()
+        d1_train2 = self.other.get_D1_valid()
+        return data.ConcatDataset([d1_train1, d1_train2])
+
+    def get_D1_test(self):
+        d1_train1 = self.src.get_D1_test()
+        d1_train2 = self.other.get_D1_test()
+        return data.ConcatDataset([d1_train1, d1_train2])
+
+    def get_D2_valid(self, D1):
+        d1_train1 = self.src.get_D2_valid(D1)
+        d1_train2 = self.other.get_D2_valid(D1)
+        return data.ConcatDataset([d1_train1, d1_train2])
+
+    def get_D2_test(self, D1):
+        d1_train1 = self.src.get_D2_test(D1)
+        d1_train2 = self.other.get_D2_test(D1)
+        return data.ConcatDataset([d1_train1, d1_train2])
+
+    def is_compatible(self, D1):
+        import warnings
+        warnings.warn("Calling is_compatible on a combined dataset")
+        return True
+
 
 class MirroredDataset(data.Dataset):
     def __init__(self, parent_dataset):
