@@ -25,11 +25,11 @@ class MahaModelWrapper(nn.Module):
     """
     Module that classifies data based on class conditional gaussians
     """
-    def __init__(self, base_model:NIHDenseBinary, num_class=2):
+    def __init__(self, base_model:NIHDenseBinary, num_class=2, intermediate_nodes=(3, 5, 7, 9, 11)):
         super(MahaModelWrapper, self).__init__()
         self.base_model = base_model
         self.num_class = num_class
-
+        self.intermediate_nodes = intermediate_nodes
         #self.activations = OrderedDict()
         #intermediate_nodes = [3, 5, 7, 9, 11]
 
@@ -52,7 +52,7 @@ class MahaModelWrapper(nn.Module):
             all_ys.append(y)
 
             activations = OrderedDict()
-            intermediate_nodes = [3, 5, 7, 9, 11]
+            intermediate_nodes = self.intermediate_nodes
             hooks = []
             for i in intermediate_nodes:
                 hook = self.track_channel_mean(self.base_model.densenet121.features[i], activations)
@@ -93,7 +93,7 @@ class MahaModelWrapper(nn.Module):
         if len(self.mus) ==0:
             return self.base_model.forward(x, softmax=softmax)
         activations = OrderedDict()
-        intermediate_nodes = [3, 5, 7, 9, 11]
+        intermediate_nodes = self.intermediate_nodes
         hooks = []
         for i in intermediate_nodes:
             hook = self.track_channel_mean(self.base_model.densenet121.features[i], activations)
@@ -409,3 +409,27 @@ class MahalanobisDetector(ProbabilityThreshold):
         self.H_class.eval()
         self.H_class.set_eval_direct(False)
         return test_average_acc
+
+class MahalanobisDetectorOneLayer(MahalanobisDetector):
+    def propose_H(self, dataset):
+        config = self.get_base_config(dataset)
+
+        from models import get_ref_model_path
+        h_path = get_ref_model_path(self.args, config.model.__class__.__name__, dataset.name)
+        best_h_path = path.join(h_path, 'model.best.pth')
+
+        if not path.isfile(best_h_path):
+            raise NotImplementedError("Please use model_setup to pretrain the networks first!")
+        else:
+            print(colored('Loading H1 model from %s' % best_h_path, 'red'))
+            config.model.load_state_dict(torch.load(best_h_path))
+
+        # trainer.run_epoch(0, phase='all')
+        # test_average_acc = config.logger.get_measure('all_accuracy').mean_epoch(epoch=0)
+        # print("All average accuracy %s"%colored('%.4f%%'%(test_average_acc*100), 'red'))
+
+        self.base_model = MahaModelWrapper(config.model, 2, intermediate_nodes=(11,))
+        loader = DataLoader(dataset, batch_size=self.args.batch_size, shuffle=True,
+                            num_workers=self.args.workers, pin_memory=True)
+        self.base_model.collect_states(loader, self.args.device)
+        self.base_model.eval()

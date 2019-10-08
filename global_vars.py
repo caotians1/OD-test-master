@@ -176,7 +176,8 @@ all_methods = {
     'pixelcnn':         PCNN.PixelCNN,
     'openmax':          OM.OpenMax,
     'ALI_reconst':      ALI.ALIReconstruction,
-    'Maha':             MAHA.MahalanobisDetector
+    'Maha':             MAHA.MahalanobisDetector,
+    'Maha1layer':       MAHA.MahalanobisDetectorOneLayer,
 }
 
 ##################################################################
