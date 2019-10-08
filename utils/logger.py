@@ -138,7 +138,7 @@ class Logger:
 
     def __init__(self, logdir):
         self.measures = {}
-        self.writer = SummaryWriter(logdir=logdir)
+        self.writer = SummaryWriter(logdir)
         self.logdir = logdir
 
     def log(self, measure_name, measurement, epoch, iteration=None):

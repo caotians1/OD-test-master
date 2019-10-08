@@ -1,30 +1,24 @@
 from __future__ import print_function
-import os,sys,inspect
+import os
 from termcolor import colored
+
 import torch
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir)
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
 
 import models as Models
-from utils.args import args
-import torch.nn as nn
-from torch.utils.data.sampler import WeightedRandomSampler
-
-from torch import optim
-
-from models.ALImodel import ALIModel
-from datasets.PCAM import PCAM
+import global_vars as Global
+from utils.iterative_trainer import IterativeTrainer, IterativeTrainerConfig
 from utils.logger import Logger
-from tqdm import tqdm
+from datasets import MirroredDataset
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
-if __name__ == "__main__":
-    dataset = PCAM(root_path=os.path.join(args.root_path, "pcam"), extract=True, downsample=64).get_D1_train()
+def Train_ALI(args, model, dataset, BCE_Loss=True):
     dataloader = torch.utils.data.DataLoader(dataset, args.batch_size, True, num_workers=args.workers, pin_memory=True)
-    model = ALIModel(dims=(3,64,64)).cuda()
     home_path = Models.get_ref_model_path(args, model.__class__.__name__, dataset.name, model_setup=True,
                                           suffix_str='base0')
     logger = Logger(home_path)
@@ -36,14 +30,17 @@ if __name__ == "__main__":
     best_gen_loss = 9999
     if not os.path.isfile(hbest_path + ".done"):
         print(colored('Training from scratch', 'green'))
-        best_loss = -1
 
         optimizerG = optim.Adam([{'params': model.GenX.parameters()},
                                  {'params': model.GenZ.parameters()}], lr=args.lr, betas=(args.beta1, args.beta2))
 
         optimizerD = optim.Adam([{'params': model.DisZ.parameters()}, {'params': model.DisX.parameters()},
                                  {'params': model.DisXZ.parameters()}], lr=args.lr, betas=(args.beta1, args.beta2))
-        criterion = nn.BCELoss()
+        if BCE_Loss:
+            criterion = nn.BCELoss()
+        else:
+            criterion = nn.MSELoss()
+
         for epoch in range(1, 100 + 1):
             model.train()
             with tqdm(total=len(dataloader), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
@@ -90,6 +87,22 @@ if __name__ == "__main__":
             disc_loss = logger.get_measure('Disc_loss').mean_epoch()
             gen_loss = logger.get_measure('Gen_loss').mean_epoch()
             print("Discriminator loss %.4f, Generator loss %.4f" % (disc_loss, gen_loss))
+
+            logger.writer.add_scalar('disc_loss', disc_loss, epoch)
+            logger.writer.add_scalar('gen_loss', gen_loss, epoch)
+
+            # vis in tensorboard
+            for (image, label) in dataloader:
+                prediction = model(x=image.cuda()).data.cpu().squeeze().numpy()
+                N = min(prediction.shape[0], 5)
+                fig, ax = plt.subplots(N, 2)
+                image = image.data.squeeze().numpy()
+                for i in range(N):
+                    ax[i, 0].imshow(prediction[i])
+                    ax[i, 1].imshow(image[i])
+                logger.writer.add_figure('Vis', fig, epoch)
+                plt.close(fig)
+                break
 
             torch.save(logger.measures, os.path.join(home_path, 'logger.pth'))
 
