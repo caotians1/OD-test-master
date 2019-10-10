@@ -105,6 +105,8 @@ class AEKNNModel(nn.Module):
         self.subnetwork.eval()
         if not self.SV:
             x = self.subnetwork.encode(x).data
+            if len(x.shape) == 4:
+                x = x.squeeze()
         else:
             x = self.subnetwork.partial_forward(x).data
         base_data = self.base_data
@@ -156,6 +158,27 @@ class AEKNNSVM(ScoreSVM):
             else:
                 base_model.netid = "MSE." + base_model.netid
             home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
+        elif isinstance(self, ALIBCEKNNSVM) or isinstance(self, ALIMSEKNNSVM):
+            base_model = Global.get_ref_autoencoder(dataset.name)[1]().to(self.args.device)
+            if isinstance(self, ALIBCEKNNSVM):
+                base_model.netid = "BCE." + base_model.netid
+            else:
+                base_model.netid = "MSE." + base_model.netid
+            home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
+        elif isinstance(self, ALIVAEBCEKNNSVM)or isinstance(self, ALIVAEMSEKNNSVM):
+            base_model = Global.get_ref_vae(dataset.name)[1]().to(self.args.device)
+            if isinstance(self, ALIVAEBCEKNNSVM):
+                base_model.netid = "BCE." + base_model.netid
+            else:
+                base_model.netid = "MSE." + base_model.netid
+            home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
+        elif isinstance(self, ALIKNNSVM):
+            base_model = Global.get_ref_ali(dataset.name)[0]().to(self.args.device)
+            if isinstance(self, ALIKNNSVM):
+                base_model.netid = "BCE." + base_model.netid
+            else:
+                base_model.netid = "MSE." + base_model.netid
+            home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
         else:
             raise NotImplementedError()
 
@@ -184,6 +207,8 @@ class AEKNNSVM(ScoreSVM):
                 for i, (x, _) in enumerate(all_loader):
                     n_data = x.size(0)
                     output = base_model.encode(x.to(self.args.device)).data
+                    if len(output.shape) == 4:
+                        output = output.squeeze()
                     self.base_data[base_ind:base_ind+n_data].copy_(output)
                     base_ind = base_ind + n_data
                     pbar.update()
@@ -208,25 +233,9 @@ class SVKNNSVM(ScoreSVM):
             self.base_model = None
 
         # Set up the base0-model
-        base_model = Global.get_ref_classifier(dataset.name)[self.default_model]().to(self.args.device)
+        base_model = Global.get_ref_classifier(dataset.name)[0]().to(self.args.device)
         from models import get_ref_model_path
         home_path = get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name)
-        # if isinstance(self, BCEKNNSVM) or isinstance(self, MSEKNNSVM):
-        #     base_model = Global.get_ref_autoencoder(dataset.name)[0]().to(self.args.device)
-        #     if isinstance(self, BCEKNNSVM):
-        #         base_model.netid = "BCE." + base_model.netid
-        #     else:
-        #         base_model.netid = "MSE." + base_model.netid
-        #     home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
-        # elif isinstance(self, VAEBCEKNNSVM)or isinstance(self, VAEMSEKNNSVM):
-        #     base_model = Global.get_ref_vae(dataset.name)[0]().to(self.args.device)
-        #     if isinstance(self, VAEBCEKNNSVM):
-        #         base_model.netid = "BCE." + base_model.netid
-        #     else:
-        #         base_model.netid = "MSE." + base_model.netid
-        #     home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
-        # else:
-        #     raise NotImplementedError()
 
         hbest_path = path.join(home_path, 'model.best.pth')
         best_h_path = hbest_path
@@ -278,4 +287,25 @@ class VAEMSEKNNSVM(AEKNNSVM):
 class VAEBCEKNNSVM(AEKNNSVM):
     def method_identifier(self):
         output = "VAEBCEKNNSVM/%d"%self.default_model
+        return output
+class ALIBCEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIBCEKNNSVM/%d"%self.default_model
+        return output
+class ALIMSEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIMSEKNNSVM/%d"%self.default_model
+        return output
+class ALIVAEMSEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIVAEMSEKNNSVM/%d"%self.default_model
+        return output
+class ALIVAEBCEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIVAEBCEKNNSVM/%d"%self.default_model
+        return output
+
+class ALIKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIKNNSVM/%d"%self.default_model
         return output
