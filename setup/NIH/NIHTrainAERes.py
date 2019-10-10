@@ -7,7 +7,7 @@ sys.path.insert(0,parentdir)
 
 from utils.args import args
 
-import categories.ae_setup as AESetup
+import setup.categories.ae_setup as AESetup
 from models.autoencoders import Generic_VAE, Generic_AE, Residual_AE
 from datasets.NIH_Chest import NIHChestBinaryTrainSplit
 
