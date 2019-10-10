@@ -9,12 +9,12 @@ import torchvision.models.densenet as Densenet
 
 class PartialForwardable(object):
     def partial_forward(self, x):
-        if 'densenet121' in self.__dict__:
+        if hasattr(self, 'densenet121'):
             features = self.densenet121.features(x)
             out = F.relu(features, inplace=True)
             out = F.avg_pool2d(out, kernel_size=7, stride=1).view(features.size(0), -1)
             return out
-        elif 'model' in self.__dict__:
+        elif hasattr(self, 'model'):
             return self.model.features(x).view(x.size(0), 1)
 
 class MNIST_VGG(nn.Module):

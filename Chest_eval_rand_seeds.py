@@ -3,7 +3,11 @@ from __future__ import print_function
 import os
 from termcolor import colored
 import numpy as np
-import torch
+import warnings
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    import torch
 
 from utils.args import args
 import global_vars as Global
@@ -79,27 +83,28 @@ if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
     methods = [
-               'prob_threshold/0',  #'prob_threshold/1',
-               'score_svm/0',          #'score_svm/1',
-               'openmax/0',            #'openmax/1',
-               'binclass/0',           #'binclass/1',
-               'odin/0',              # 'odin/1',
-                "Maha",
-                "Maha1layer",
-                "svknn",
+               #'prob_threshold/0',  #'prob_threshold/1',
+               #'score_svm/0',          #'score_svm/1',
+               #'openmax/0',            #'openmax/1',
+               #'binclass/0',           #'binclass/1',
+               #'odin/0',              # 'odin/1',
+               #"Maha",
+               #"Maha1layer",
+               #"svknn",
 
         ]
     methods_64 = [
-          'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
-        'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
-        'reconst_thresh/8', 'reconst_thresh/9', 'reconst_thresh/10','reconst_thresh/11',
-        'reconst_thresh/12', 'reconst_thresh/13',
-         'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
+          #'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
+        #'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
+        #'reconst_thresh/8', 'reconst_thresh/9', 'reconst_thresh/10','reconst_thresh/11',
+        #'reconst_thresh/12', 'reconst_thresh/13',
+         #'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
+        'aliknnsvm/1','aliknnsvm/8',
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
           'vaemseaeknn/1','vaebceaeknn/1', 'mseaeknn/1', 'bceaeknn/1',
-          'vaemseaeknn/2','vaebceaeknn/2', 'mseaeknn/2',  'bceaeknn/2',
-          'vaemseaeknn/4','vaebceaeknn/4', 'mseaeknn/4',  'bceaeknn/4',
           'vaemseaeknn/8','vaebceaeknn/8', 'mseaeknn/8',  'bceaeknn/8',
+        'alivaemseaeknn/1', 'alivaebceaeknn/1', 'alimseaeknn/1', 'alibceaeknn/1',
+        'alivaemseaeknn/8', 'alivaebceaeknn/8', 'alimseaeknn/8', 'alibceaeknn/8',
     ]
 
     D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
@@ -116,13 +121,13 @@ if __name__ == '__main__':
         'CIFAR10',
         'STL10',
         'TinyImagenet',
-        'MURAHAND',
-        'MURAWRIST',
-        'MURAELBOW',
-        'MURAFINGER',
-        'MURAFOREARM',
-        'MURAHUMERUS',
-        'MURASHOULDER',
+        #'MURAHAND',
+        #'MURAWRIST',
+        #'MURAELBOW',
+        #'MURAFINGER',
+        #'MURAFOREARM',
+        #'MURAHUMERUS',
+        #'MURASHOULDER',
     ]
 
 
@@ -130,6 +135,7 @@ if __name__ == '__main__':
 
     d2s = All_ODs[:3]
     d3s = All_ODs[3:]
+    print("Chosen D2s: ", d2s)
 
     D2s = []
     for d2 in d2s:

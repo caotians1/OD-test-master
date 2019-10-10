@@ -293,7 +293,7 @@ class NIHChestBinaryTest(NIHChest):
 
 class NIHChestBinaryTrainSplit(NIHChest):
     def __init__(self, *args, **kwargs):
-        kwargs.update({'binary': True, 'test_length': 5000,
+        kwargs.update({'binary': True, 'test_length': 20000,
                           'leave_out_classes':['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']})
         super(NIHChestBinaryTrainSplit, self).__init__(*args, **kwargs)
 
