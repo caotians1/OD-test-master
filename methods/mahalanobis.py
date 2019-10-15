@@ -433,3 +433,68 @@ class MahalanobisDetectorOneLayer(MahalanobisDetector):
                             num_workers=self.args.workers, pin_memory=True)
         self.base_model.collect_states(loader, self.args.device)
         self.base_model.eval()
+
+    def get_H_config(self, train_ds, valid_ds, will_train=True, epsilon=0.0012):
+        print("Preparing training D1+D2 (H)")
+
+        # Initialize the multi-threaded loaders.
+        train_loader = DataLoader(train_ds, batch_size=self.args.batch_size, shuffle=True,
+                                  num_workers=self.args.workers, pin_memory=True)
+        valid_loader = DataLoader(valid_ds, batch_size=self.args.batch_size, shuffle=True,
+                                  num_workers=self.args.workers, pin_memory=True)
+
+        # Set up the criterion
+        criterion = nn.BCEWithLogitsLoss().cuda()
+        # Set up the model
+        model = MahaODModelWrapper(self.base_model, epsilon=epsilon, num_class=2, num_layers=1).to(self.args.device)
+
+        old_valid_loader = valid_loader
+        if will_train:
+            # cache the subnetwork for faster optimization.
+            from methods import get_cached
+            from torch.utils.data.dataset import TensorDataset
+
+            trainX, trainY = get_cached(model, train_loader, self.args.device)
+            validX, validY = get_cached(model, valid_loader, self.args.device)
+
+            new_train_ds = TensorDataset(trainX, trainY)
+            new_valid_ds = TensorDataset(validX, validY)
+
+            # Initialize the new multi-threaded loaders.
+            train_loader = DataLoader(new_train_ds, batch_size=2048, shuffle=True, num_workers=0, pin_memory=False)
+            valid_loader = DataLoader(new_valid_ds, batch_size=2048, shuffle=True, num_workers=0, pin_memory=False)
+
+            # Set model to direct evaluation (for cached data)
+            model.set_eval_direct(True)
+
+        # Set up the config
+        config = IterativeTrainerConfig()
+
+        base_model_name = self.base_model.__class__.__name__
+        if hasattr(self.base_model, 'preferred_name'):
+            base_model_name = self.base_model.preferred_name()
+
+        config.name = '_%s[%s](%s-%s)' % (self.__class__.__name__, base_model_name, self.args.D1, self.args.D2)
+        config.train_loader = train_loader
+        config.valid_loader = valid_loader
+        config.phases = {
+            'train': {'dataset': train_loader, 'backward': True},
+            'test': {'dataset': valid_loader, 'backward': False},
+            'testU': {'dataset': old_valid_loader, 'backward': False},
+        }
+        config.criterion = criterion
+        config.classification = True
+        config.cast_float_label = True
+        config.stochastic_gradient = True
+        config.visualize = not self.args.no_visualize
+        config.model = model
+        config.optim = optim.Adagrad(model.H.parameters(), lr=1e-3)
+        config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=5, threshold=1e-1, min_lr=1e-6,
+                                                                factor=0.1, verbose=True)
+        h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
+                           '%d' % (self.default_model),
+                           '%s-%s.pth' % (self.args.D1, self.args.D2))
+        h_parent = path.dirname(h_path)
+        config.logger = Logger(h_parent)
+        config.max_epoch = 100
+        return config
