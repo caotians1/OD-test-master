@@ -145,7 +145,7 @@ class MahaODModelWrapper(AbstractModelWrapper):
         self.num_class=num_class
         self.num_layers = num_layers
         self.H = nn.Module()
-        self.H.regressor = nn.Sequential(nn.BatchNorm1d(num_layers),
+        self.H.regressor = nn.Sequential(#nn.BatchNorm1d(num_layers),
                                          nn.Linear(num_layers, 1),)
         # register params under H for storage.
         self.H.register_buffer('epsilon', torch.FloatTensor([epsilon]))
@@ -179,7 +179,8 @@ class MahaODModelWrapper(AbstractModelWrapper):
 
                     # second evaluation.
                     new_output = self.base_model(new_input, softmax=False)[i].detach()
-                    input = base_output.max(1)[0].detach().unsqueeze_(1)
+                    input = new_output.max(1)[0].detach().unsqueeze_(1)
+                    #input = base_output.max(1)[0].detach().unsqueeze_(1)
                     all_layer_outputs.append(input)
                 del base_output
             del base_outputs
@@ -295,7 +296,7 @@ class MahalanobisDetector(ProbabilityThreshold):
         config.stochastic_gradient = True
         config.visualize = not self.args.no_visualize
         config.model = model
-        config.optim = optim.Adagrad(model.H.parameters(), lr=1e-3)
+        config.optim = optim.Adam(model.H.parameters(), lr=1e-1)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=5, threshold=1e-1, min_lr=1e-6,
                                                                 factor=0.1, verbose=True)
         h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
@@ -320,7 +321,7 @@ class MahalanobisDetector(ProbabilityThreshold):
             train_ds = new_train_ds
 
         # As suggested by the authors.
-        all_epsilons = torch.linspace(0, 0.004, 21)
+        all_epsilons = torch.linspace(0.0, 0.004, 21)
         total_params = len(all_epsilons)
         best_accuracy = -1
 
@@ -488,7 +489,7 @@ class MahalanobisDetectorOneLayer(MahalanobisDetector):
         config.stochastic_gradient = True
         config.visualize = not self.args.no_visualize
         config.model = model
-        config.optim = optim.Adagrad(model.H.parameters(), lr=1e-3)
+        config.optim = optim.Adam(model.H.parameters(), lr=1e-1)
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=5, threshold=1e-1, min_lr=1e-6,
                                                                 factor=0.1, verbose=True)
         h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
