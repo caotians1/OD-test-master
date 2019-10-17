@@ -106,7 +106,7 @@ class AEKNNModel(nn.Module):
         if not self.SV:
             x = self.subnetwork.encode(x).data
             if len(x.shape) == 4:
-                x = x.squeeze()
+                x = x.squeeze(-1).squeeze(-1)
         else:
             x = self.subnetwork.partial_forward(x).data
         base_data = self.base_data
