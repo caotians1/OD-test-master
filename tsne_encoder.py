@@ -3,182 +3,240 @@ import csv, os
 import torch
 import matplotlib
 import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, TensorDataset
+import global_vars as Global
+from sklearn.manifold import TSNE
+from datasets.NIH_Chest import NIHChestBinaryTrainSplit
+import seaborn as sns
+import argparse
+import os
+import models as Models
+from easydict import EasyDict
+import _pickle
+from datasets.NIH_Chest import NIHChest
 
+All_OD1 = [
+        'UniformNoise',
+        #'NormalNoise',
+        'MNIST',
+        'FashionMNIST',
+        'NotMNIST',
+        #'CIFAR100',
+        'CIFAR10',
+        'STL10',
+        'TinyImagenet',
+        'MURAHAND',
+        #'MURAWRIST',
+        #'MURAELBOW',
+        'MURAFINGER',
+        #'MURAFOREARM',
+        #'MURAHUMERUS',
+        #'MURASHOULDER',
+    ]
+ALL_OD2 = [
+            "PADChestAP",
+            "PADChestL",
+           "PADChestAPHorizontal",
+           "PADChestPED"
+]
+d3_tags = ['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']
 
-def weighted_std(values, weights, axis=None):
-    if axis is None:
-        axis = np.arange(len(values.shape))
+def proc_data(args, model, D1, d2s, tags):
+    Out_X = []
+    Out_Y = []
+    Cat2Y = {}
+    for y, D2 in enumerate(d2s):
+        Cat2Y[tags[y]] = y + 1
+        loader = DataLoader(D2, shuffle=True, batch_size=args.points_per_d2)
+        for i, (X, _) in enumerate(loader):
+            x = X.numpy()
+            Out_X.append(x)
+            Out_Y.append(np.ones(x.shape[0]) * (y + 1))
+            break
 
-    average = np.average(values, weights=weights, axis=axis)
-    for axi in axis:
-        average = np.expand_dims(average, axi)
-    # Fast and numerically precise:
-    variance = np.average((values-average)**2, weights=weights, axis=axis)
-    return np.sqrt(variance)
+    Out_X = np.concatenate(Out_X, axis=0)
+    Out_Y = np.concatenate(Out_Y, axis=0)
+    N_out = Out_X.shape[0]
+    print(N_out)
+    N_in = max(int(N_out * 0.2), args.points_per_d2)
+    In_X = []
+    for i in range(N_in):
+        In_X.append(D1[i][0].numpy())
+    In_Y = np.zeros(N_in)
+    print(N_in, len(In_X), len(In_Y))
+    Cat2Y["In-Data"] = 0
+    ALL_X = np.concatenate((In_X, Out_X))
+    ALL_Y = np.concatenate((In_Y, Out_Y))
 
-def make_plot(filename, d2_handles, title, results):
-    rec_error = {
-        "reconst_thresh/0": "12Layer-AE-BCE",
-        "reconst_thresh/1": "12Layer-AE-MSE",
-        "reconst_thresh/2": "12Layer-VAE-BCE",
-        "reconst_thresh/3": "12Layer-VAE-MSE",
-        "reconst_thresh/4": "ALIstyle-AE-BCE",
-        "reconst_thresh/5": "ALIstyle-AE-MSE",
-        "reconst_thresh/6": "ALIstyle-VAE-BCE",
-        "reconst_thresh/7": "ALIstyle-VAE-MSE",
-        "reconst_thresh/8": "DeepRes-AE-BCE",
-        "reconst_thresh/9": "DeepRes-AE-MSE",
-        "reconst_thresh/10": "ALIRes-AE-BCE",
-        "reconst_thresh/11": "ALIRes-AE-MSE",
-        "reconst_thresh/12": "ALIRes-VAE-BCE",
-        "reconst_thresh/13": "ALIRes-VAE-MSE",
-    }
-    if type(d2_handles) == str:
-        d2_handles = [d2_handles, ]
-    use_case1_acc = []
-    use_case1_auroc = []
-    use_case1_auprc = []
-    tpr = []
+    new_dataset = TensorDataset(torch.tensor(ALL_X))
+    loader = DataLoader(new_dataset, batch_size=64)
+    ALL_EMBS = []
+    for i, (X,) in enumerate(loader):
+        x = model.encode(X.cuda()).data.cpu().numpy()
+        ALL_EMBS.append(x)
+    ALL_EMBS = np.concatenate(ALL_EMBS, axis=0)
 
-    method_handles = []
-    d3_handles = []
-    true_d2_handles = []
-    for row in results:
-        if not any([handle in row[2] for handle in d2_handles]):
-            continue
-        if row[0] in rec_error:
-            token = rec_error[row[0]]
-        else:
-            token = row[0]
-        if token not in method_handles:
-            method_handles.append(token)
-        ind_1 = method_handles.index(token)
-        if row[2] not in true_d2_handles:
-            true_d2_handles.append(row[2])
-        ind_2 = true_d2_handles.index(row[2])
-        if row[3] not in d3_handles:
-            d3_handles.append(row[3])
-        ind_3 = d3_handles.index(row[3])
-        use_case1_acc.append((row[6], ind_1, ind_2, ind_3))
-        use_case1_auroc.append((row[7], ind_1, ind_2, ind_3))
-        use_case1_auprc.append((row[8], ind_1, ind_2, ind_3))
-    uc1_acc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
-    uc1_roc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
-    uc1_prc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
-    weights = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
-
-    for acc, roc, prc in zip(use_case1_acc, use_case1_auroc, use_case1_auprc):
-        try:
-            weights[prc[1], prc[2], prc[3]] += 1
-            uc1_acc[acc[1], acc[2], acc[3]] = uc1_acc[acc[1], acc[2], acc[3]] * (weights[acc[1], acc[2], acc[3]] - 1) / weights[acc[1], acc[2], acc[3]]\
-                                              + acc[0] /(weights[acc[1], acc[2], acc[3]])
-            uc1_roc[roc[1], roc[2], roc[3]] = uc1_roc[roc[1], roc[2], roc[3]] * (weights[roc[1], roc[2], roc[3]] - 1) / weights[roc[1], roc[2], roc[3]]\
-                                              + roc[0] /(weights[roc[1], roc[2], roc[3]])
-            uc1_prc[prc[1], prc[2], prc[3]] = uc1_prc[prc[1], prc[2], prc[3]] * (weights[prc[1], prc[2], prc[3]] - 1) / weights[prc[1], prc[2], prc[3]]\
-                                              + prc[0] /(weights[prc[1], prc[2], prc[3]])
-        except:
-            pass
-    inds_0, inds_1, inds_2 = np.nonzero(np.array(weights == 0))
-
-    for i in range(len(inds_0)):
-        print(method_handles[inds_0[i]],", ", true_d2_handles[inds_1[i]], ",", d3_handles[inds_2[i]], ", has no entry")
-    # method means
-    n = weights[0].sum()
-    uc1_accm = np.average(uc1_acc, axis=(1,2), weights=weights)
-    uc1_rocm = np.average(uc1_roc, axis=(1,2), weights=weights)
-    uc1_prcm = np.average(uc1_prc, axis=(1,2), weights=weights)
-
-    uc1_accv = weighted_std(uc1_acc, weights, axis=(1,2))/np.sqrt(n)
-    uc1_rocv = weighted_std(uc1_roc, weights, axis=(1,2))/np.sqrt(n)
-    uc1_prcv = weighted_std(uc1_prc, weights, axis=(1,2))/np.sqrt(n)
-    def proc_var(m, v):
-        upper = []
-        lower = []
-        for n in range(m.shape[0]):
-            lower.append(v[n])
-            if m[n] + v[n] > 1.0:
-                upper.append(1.0 - m[n])
-            else:
-                upper.append(v[n])
-        return np.array([lower, upper])
-    uc1_accv = proc_var(uc1_accm, uc1_accv)
-    uc1_rocv = proc_var(uc1_rocm, uc1_rocv)
-    uc1_prcv = proc_var(uc1_prcm, uc1_prcv)
-    #uc1_accq = np.quantile(uc1_acc, [.25, .75], axis=1)
-    #uc1_rocq = np.quantile(uc1_roc, [.25, .75], axis=1)
-    #uc1_prcq = np.quantile(uc1_prc, [.25, .75], axis=1)
-
-    #accdelta = np.array((uc1_accq[1, :] - uc1_accm, uc1_accm - uc1_accq[0, :]))
-    #rocdelta = np.array((uc1_rocq[1, :] - uc1_rocm, uc1_rocm - uc1_rocq[0, :]))
-    #prcdelta = np.array((uc1_prcq[1, :] - uc1_prcm, uc1_prcm - uc1_prcq[0, :]))
-
-    fig, ax = plt.subplots()
-    ind = np.arange(len(uc1_accm))  # the x locations for the groups
-    width = 0.25  # the width of the bars
-    rects1 = ax.bar(ind - width * 0.75, uc1_accm, width, yerr=uc1_accv,
-                    label='Accuracy')
-    rects2 = ax.bar(ind, uc1_rocm, width, yerr=uc1_rocv,
-                    label='AUROC')
-    rects3 = ax.bar(ind + width * 0.75, uc1_prcm, width, yerr=uc1_prcv,
-                    label='AUPRC')
-
-    ax.set_xticks(ind)
-    ax.set_xticklabels(method_handles, rotation=45, ha='right')
-    title_str = title + ", D2="
-    for handle in d2_handles:
-        title_str += handle+', '
-    title_str += "error bar shows standard error"
-    ax.set_title(title_str)
-    ax.legend()
-    fig.set_size_inches(25, 9.5)
-    # when saving, specify the DPI
-
-
-    backend = matplotlib.get_backend()
-
-    if backend == "QT" or backend == "Qt5Agg":
-        manager = plt.get_current_fig_manager()
-        manager.window.showMaximized()
-    elif backend == "TkAgg":
-        manager = plt.get_current_fig_manager()
-        manager.resize(*manager.window.maxsize())
-    else:
-        manager = plt.get_current_fig_manager()
-        manager.frame.Maximize(True)
-    plt.show()
-    plt.savefig(filename, dpi=100)
-    return
+    return ALL_EMBS, ALL_Y, Cat2Y
 
 if __name__ == "__main__":
-    dir_path = "workspace/experiments/chest_eval_results"
-    res = []
-    for root, dirs, files in os.walk(dir_path):
-        print(files)
-        res = files
-    all_results = []
-    for file in res:
-        res_path = os.path.join(dir_path, file)
-        results = torch.load(res_path)['results']
-        all_results.extend(results)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--root_path', type=str, help="unique path for symlink to dataset")
+    parser.add_argument('--seed', type=int, default=42, help='Random seed. (default 42)')
+    parser.add_argument('--exp', '--experiment_id', type=str, default='test', help='The Experiment ID. (default test)')
+    parser.add_argument('--embedding_function', type=str, default="VAE")
+    parser.add_argument('--model_path', type=str, default="model_ref/Generic_VAE.HClass/NIHCC.dataset/BCE.max.512.d.12.nH.1024/model.best.pth")
+    parser.add_argument('--points_per_d2', type=int, default=64)
+    parser.add_argument('--lr', type=float, default=200)
+    parser.add_argument('--perplexity', type=float, default=50.0)
+    parser.add_argument('--n_iter', type=int, default=1000)
+    parser.add_argument('--load', action="store_true")
+    parser.add_argument('--plot_percent', default=1.0, type=float)
+    args = parser.parse_args()
+    args.experiment_id = args.exp
 
-    filenames = ["UC1_7seeds_se.png",
-                 "UC2_7seeds_se.png",
-                 "UC3_7seeds_se.png",
-                 ]
-    d2sets = [["CIFAR",
-               "MURA",
-               "Noise",
-               'MNIST',
-               'FashionMNIST',
-               'NotMNIST',
-               'CIFAR100',
-               'CIFAR10',
-               'STL10',
-               'TinyImagenet',
-               ],
-              "PAD",
-              "NIHCC",
-              ]
-    titles = ["Usecase 1", "Usecase 2", "Usecase 3"]
-    for fn, d2, title in zip(filenames, d2sets, titles):
-        make_plot(fn, d2, title, all_results)
+    exp_data = []
+    workspace_path = os.path.abspath('workspace')
+
+    exp_list = args.experiment_id.split(',')
+    exp_paths = []
+    for exp_id in exp_list:
+        experiments_path = os.path.join(workspace_path, 'experiments', exp_id)
+        if not os.path.exists(experiments_path):
+            os.makedirs(experiments_path)
+
+        # Make the experiment subfolders.
+        for folder_name in exp_data:
+            if not os.path.exists(os.path.join(experiments_path, folder_name)):
+                os.makedirs(os.path.join(experiments_path, folder_name))
+        exp_paths.append(experiments_path)
+
+    if len(exp_list) == 1:
+        args.experiment_path = exp_paths[0]
+    else:
+        print('Operating in multi experiment mode.', 'red')
+        args.experiment_path = exp_paths
+
+    #####################################################################################################
+    if not args.load or not os.path.exists(os.path.join(args.experiment_path, "all_embs_UC1.npy")):
+
+        D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64)
+        D1 = D164.get_D1_train()
+
+        emb = args.embedding_function.lower()
+        assert emb in ["vae", "ae", "ali"]
+        dummy_args = EasyDict()
+        dummy_args.exp = "foo"
+        dummy_args.experiment_path = args.experiment_path
+        if emb == "vae":
+            model = Global.dataset_reference_vaes["NIHCC"][0]()
+            home_path = Models.get_ref_model_path(dummy_args, model.__class__.__name__, D164.name,
+                                                  suffix_str="BCE." + model.netid)
+            model_path = os.path.join(home_path, 'model.best.pth')
+        elif emb == "ae":
+            model = Global.dataset_reference_autoencoders["NIHCC"][0]()
+
+            home_path = Models.get_ref_model_path(dummy_args, model.__class__.__name__, D164.name,
+                                                  suffix_str="MSE." + model.netid)
+            model_path = os.path.join(home_path, 'model.best.pth')
+        else:
+            model = Global.dataset_reference_ALI["NIHCC"][0]()
+            home_path = Models.get_ref_model_path(dummy_args, model.__class__.__name__, D164.name,
+                                                  suffix_str="BCE." + model.netid)
+            model_path = os.path.join(home_path, 'model.best.pth')
+
+        model.load_state_dict(torch.load(model_path))
+
+        model = model.to("cuda")
+
+        d2s = []
+        for y, d2 in enumerate(All_OD1):
+            dataset = Global.all_datasets[d2]
+            if 'dataset_path' in dataset.__dict__:
+                print(os.path.join(args.root_path, dataset.dataset_path))
+                D2 = dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)).get_D2_test(D164)
+
+            else:
+                D2 = dataset().get_D2_test(D164)
+            d2s.append(D2)
+
+        ALL_EMBS, ALL_Y, Cat2Y = proc_data(args, model, D1, d2s, All_OD1)
+
+        with open(os.path.join(args.experiment_path, "cat2y_UC1.pkl"), "wb") as fp:
+            _pickle.dump(Cat2Y, fp)
+        np.save(os.path.join(args.experiment_path, "all_y_UC1.npy"), ALL_Y)
+        np.save(os.path.join(args.experiment_path, "all_embs_UC1.npy"), ALL_EMBS)
+
+        #######################################################################################
+        d2s = []
+        for y, d2 in enumerate(ALL_OD2):
+            dataset = Global.all_datasets[d2]
+            if 'dataset_path' in dataset.__dict__:
+                print(os.path.join(args.root_path, dataset.dataset_path))
+                D2 = dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)).get_D2_test(D164)
+
+            else:
+                D2 = dataset().get_D2_test(D164)
+            d2s.append(D2)
+
+        ALL_EMBS, ALL_Y, Cat2Y = proc_data(args, model, D1, d2s, ALL_OD2)
+
+        with open(os.path.join(args.experiment_path, "cat2y_UC2.pkl"), "wb") as fp:
+            _pickle.dump(Cat2Y, fp)
+        np.save(os.path.join(args.experiment_path, "all_y_UC2.npy"), ALL_Y)
+        np.save(os.path.join(args.experiment_path, "all_embs_UC2.npy"), ALL_EMBS)
+
+        #########################################################################################
+        d2s = []
+        for d2 in d3_tags:
+            D2 = NIHChest(root_path=os.path.join(args.root_path, 'NIHCC'), binary=True, test_length=5000,
+                          keep_in_classes=[d2, ]).get_D2_test(D164)
+            d2s.append(D2)
+        ALL_EMBS, ALL_Y, Cat2Y = proc_data(args, model, D1, d2s, d3_tags)
+
+        with open(os.path.join(args.experiment_path, "cat2y_UC3.pkl"), "wb") as fp:
+            _pickle.dump(Cat2Y, fp)
+        np.save(os.path.join(args.experiment_path, "all_y_UC3.npy"), ALL_Y)
+        np.save(os.path.join(args.experiment_path, "all_embs_UC3.npy"), ALL_EMBS)
+
+    else:
+        pass
+
+    for i in range(3):
+        uc_tag = i+1
+        ALL_EMBS = np.load(os.path.join(args.experiment_path, "all_embs_UC%i.npy"%uc_tag))
+        with open(os.path.join(args.experiment_path, "cat2y_UC%i.pkl"%uc_tag), "rb") as fp:
+            Cat2Y = _pickle.load(fp)
+        ALL_Y = np.load(os.path.join(args.experiment_path, "all_y_UC%i.npy"%uc_tag))
+        N=ALL_EMBS.shape[0]
+        ALL_EMBS = ALL_EMBS.reshape(N, -1)
+        N_plot = int(args.plot_percent * ALL_EMBS.shape[0])
+        rand_inds = np.arange(ALL_EMBS.shape[0])
+        np.random.shuffle(rand_inds)
+        rand_inds = rand_inds[:N_plot]
+        ALL_Y = ALL_Y[rand_inds]
+
+        tsne = TSNE(perplexity=args.perplexity, learning_rate=args.lr, n_iter= args.n_iter)
+        palette = sns.color_palette("bright", 10)
+        from matplotlib.colors import ListedColormap
+        my_cmap = ListedColormap(palette.as_hex())
+
+        X_embedded = tsne.fit_transform(ALL_EMBS)
+
+        X_embedded = X_embedded[rand_inds]
+        fig, ax = plt.subplots()
+        for k, cla in Cat2Y.items():
+            target_inds = np.nonzero(ALL_Y == cla)
+            ax.scatter(X_embedded[target_inds, 0].squeeze(), X_embedded[target_inds, 1].squeeze(), c=palette.as_hex()[cla], label=k)
+
+        #ax.scatter(X_embedded[:, 0], X_embedded[:, 1], c=ALL_Y, cmap=my_cmap)
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+        # Put a legend to the right of the current axis
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        #ax.legend([k for k in Cat2Y.keys()])
+        #plt.show()
+        plt.savefig(os.path.join(args.experiment_path, "UC_%i_tsne.png"%uc_tag), dpi=100)
+        #sns.scatterplot(X_embedded[:, 0], X_embedded[:, 1], hue=ALL_Y, legend='full', palette=palette)
+        print("done")
+

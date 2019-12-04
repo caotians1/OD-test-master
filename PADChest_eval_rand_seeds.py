@@ -12,6 +12,7 @@ with warnings.catch_warnings():
 from utils.args import args
 import global_vars as Global
 from datasets.NIH_Chest import NIHChestBinaryTrainSplit, NIHChestBinaryValSplit, NIHChestBinaryTestSplit
+from datasets.PADChest import PADChestBinaryTrainSplit, PADChestBinaryValSplit, PADChestBinaryTestSplit, PADChestSV
 from models.ALImodel import *
 import matplotlib as mpl
 mpl.rcParams['text.antialiased']=False
@@ -83,23 +84,23 @@ if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
     methods = [
-               #'prob_threshold/0',  #'prob_threshold/1',
+               'prob_threshold/0',  #'prob_threshold/1',
                #'score_svm/0',          #'score_svm/1',
                #'openmax/0',            #'openmax/1',
                #'binclass/0',           #'binclass/1',
                #'odin/0',              # 'odin/1',
                #"Maha",
-               "Maha1layer",
+               #"Maha1layer",
                #"svknn",
 
         ]
     methods_64 = [
-          #'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
+          'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
         #'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
         #'reconst_thresh/8', 'reconst_thresh/9', 'reconst_thresh/10','reconst_thresh/11',
         #'reconst_thresh/12', 'reconst_thresh/13',
          #'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
-        'aliknnsvm/1','aliknnsvm/8',
+        #'aliknnsvm/1','aliknnsvm/8',
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
           'vaemseaeknn/1','vaebceaeknn/1', 'mseaeknn/1', 'bceaeknn/1',
           'vaemseaeknn/8','vaebceaeknn/8', 'mseaeknn/8',  'bceaeknn/8',
@@ -107,9 +108,9 @@ if __name__ == '__main__':
         'alivaemseaeknn/8', 'alivaebceaeknn/8', 'alimseaeknn/8', 'alibceaeknn/8',
     ]
 
-    D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
-    D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64)
-    args.D1 = 'NIHCC'
+    D1 = PADChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'PADChest'), binary=True)
+    D164 = PADChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "PADChest"), binary=True, downsample=64)
+    args.D1 = 'PADChestL'
 
     All_ODs = [
         'UniformNoise',
@@ -161,36 +162,36 @@ if __name__ == '__main__':
     for method in methods:
         print("current method", method)
         mt = Global.get_method(method, args)
-        if not all([has_done_before(method, 'NIHCC', composite_D2.name, d3) for d3 in d3s]):
+        if not all([has_done_before(method, 'PADChestL', composite_D2.name, d3) for d3 in d3s]):
             args.D2 = composite_D2.name
             trainval_acc = train_subroutine(mt, D1, composite_D2)
             for d3, D3 in zip(d3s,D3s):
-                if not has_done_before(method, 'NIHCC', composite_D2.name, d3):
-                    print("Evaluating: ", method, 'NIHCC', composite_D2.name, d3)
+                if not has_done_before(method, 'PADChestL', composite_D2.name, d3):
+                    print("Evaluating: ", method, 'PADChestL', composite_D2.name, d3)
                     test_results = eval_subroutine(mt, D1, D3)
-                    results['results'].append([method, 'NIHCC', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                    results['results'].append([method, 'PADChestL', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
 
     for method in methods_64:
         print("current method", method)
         mt = Global.get_method(method, args)
 
-        if not all([has_done_before(method, 'NIHCC', composite_D2.name, d3) for d3 in d3s]):
+        if not all([has_done_before(method, 'PADChestL', composite_D2.name, d3) for d3 in d3s]):
             args.D2 = composite_D2.name
             trainval_acc = train_subroutine(mt, D164, composite_D2)
             for d3, D3 in zip(d3s, D3s):
-                if not has_done_before(method, 'NIHCC', composite_D2.name, d3):
-                    print("Evaluating: ", method, 'NIHCC', composite_D2.name, d3)
+                if not has_done_before(method, 'PADChestL', composite_D2.name, d3):
+                    print("Evaluating: ", method, 'PADChestL', composite_D2.name, d3)
                     test_results = eval_subroutine(mt, D164, D3)
                     results['results'].append(
-                        [method, 'NIHCC', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(
+                        [method, 'PADChestL', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(
                             test_results))
                     torch.save(results, results_path)
 
     # usecase 2
 
     d3s = ["PADChestAP",
-            "PADChestL",
+            "PADChestPA",
            "PADChestAPHorizontal",
            "PADChestPED"
            ]
@@ -209,15 +210,15 @@ if __name__ == '__main__':
             args.D2 = d2
             mt = Global.get_method(method, args)
 
-            if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
+            if not all([has_done_before(method, 'PADChestL', d2, d3) for d3 in d3s]):
                 trainval_acc = train_subroutine(mt, D1, D2)
             for d3, D3 in zip(d3s,D3s):
                 if d2 == d3:
                     continue
-                if not has_done_before(method, 'NIHCC', d2, d3):
-                    print("Evaluating: ", method, 'NIHCC', d2, d3)
+                if not has_done_before(method, 'PADChestL', d2, d3):
+                    print("Evaluating: ", method, 'PADChestL', d2, d3)
                     test_results = eval_subroutine(mt, D1, D3)
-                    results['results'].append([method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                    results['results'].append([method, 'PADChestL', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
 
     for method in methods_64:
@@ -225,40 +226,40 @@ if __name__ == '__main__':
         for d2, D2 in zip(d3s, D3s):
             args.D2 = d2
             mt = Global.get_method(method, args)
-            if not all([has_done_before(method, 'NIHCC', d2, d3) for d3 in d3s]):
+            if not all([has_done_before(method, 'PADChestL', d2, d3) for d3 in d3s]):
                 trainval_acc = train_subroutine(mt, D164, D2)
             for d3, D3 in zip(d3s,D3s):
                 if d2 == d3:
                     continue
-                if not has_done_before(method, 'NIHCC', d2, d3):
-                    print("Evaluating: ", method, 'NIHCC', d2, d3)
+                if not has_done_before(method, 'PADChestL', d2, d3):
+                    print("Evaluating: ", method, 'PADChestL', d2, d3)
                     test_results = eval_subroutine(mt, D164, D3)
                     results['results'].append(
-                        [method, 'NIHCC', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                        [method, 'PADChestL', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
 
     # Usecase 3 Evaluation
 
     d3_tags = ['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']
 
-    args.D2 = 'NIHChest'
+    args.D2 = 'PADChestL'
     for method in methods:
         print("current method", method)
         for d2 in d3_tags:
-            if not has_done_before(method, 'NIHCC', 'NIHCC_' + d2, 'NIHCC_test'):
+            if not has_done_before(method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test'):
                 mt = Global.get_method(method, args)
 
                 d3s = d3_tags.copy().remove(d2)
 
-                D2 = NIHChest(root_path=os.path.join(args.root_path, 'NIHCC'), binary=True, test_length=5000,
-                              keep_in_classes=[d2,])
-                D3 = NIHChest(root_path=os.path.join(args.root_path, 'NIHCC'), binary=True, test_length=5000,
-                              keep_in_classes=d3s)
+                D2 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
+                                keep_in_classes=[d2,])
+                D3 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
+                                keep_in_classes=d3s)
 
                 trainval_acc = train_subroutine(mt, D1, D2)
-                print("Evaluating: ", method, 'NIHCC', 'NIHCC_' + d2, 'NIHCC_test')
+                print("Evaluating: ", method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test')
                 test_results = eval_subroutine(mt, D1, D3)
-                results['results'].append([method, 'NIHCC', 'NIHCC_' + d2, 'NIHCC_test', mt.method_identifier(), trainval_acc]
+                results['results'].append([method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test', mt.method_identifier(), trainval_acc]
                                             + list(test_results))
 
                 torch.save(results, results_path)
@@ -266,21 +267,21 @@ if __name__ == '__main__':
     for method in methods_64:
         print("current method", method)
         for d2 in d3_tags:
-            if not has_done_before(method, 'NIHCC', 'NIHCC_' + d2, 'NIHCC_test'):
+            if not has_done_before(method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test'):
                 mt = Global.get_method(method, args)
 
                 d3s = d3_tags.copy().remove(d2)
 
-                D2 = NIHChest(root_path=os.path.join(args.root_path, 'NIHCC'), binary=True, test_length=5000,
-                              keep_in_classes=[d2, ])
-                D3 = NIHChest(root_path=os.path.join(args.root_path, 'NIHCC'), binary=True, test_length=5000,
-                              keep_in_classes=d3s)
+                D2 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
+                                keep_in_classes=[d2, ], downsample=64)
+                D3 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
+                                keep_in_classes=d3s, downsample=64)
 
                 trainval_acc = train_subroutine(mt, D164, D2)
-                print("Evaluating: ", method, 'NIHCC', 'NIHCC_' + d2, 'NIHCC_test')
+                print("Evaluating: ", method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test')
                 test_results = eval_subroutine(mt, D164, D3)
                 results['results'].append(
-                    [method, 'NIHCC', 'NIHCC_' + d2, 'NIHCC_test', mt.method_identifier(), trainval_acc]
+                    [method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test', mt.method_identifier(), trainval_acc]
                     + list(test_results))
 
                 torch.save(results, results_path)
