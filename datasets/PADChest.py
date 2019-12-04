@@ -152,7 +152,7 @@ class PADChest(AbstractDomainInterface):
 
     def get_filtered_inds(self, basedata: PADChestBase, shuffle=False, max_l=None):
         if not self.keep_in_classes is None:
-            print(basedata.__dict__)
+            #print(basedata.__dict__)
             keep_in_mask_label = torch.zeros(N_CLASS).int()
             for cla in self.keep_in_classes:
                 ii = CLASSES.index(cla)
@@ -245,7 +245,7 @@ class PADChestPED(PADChest):
 
 class PADChestSVBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir,
-                 index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images-299",
+                 index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images-64",
                  imsize=224, transforms=None, binary=False, to_rgb=False, download=False, extract=True):
         super(PADChestSVBase,self).__init__()
         self.index_cache_path = index_cache_path
@@ -307,7 +307,7 @@ class PADChestSVBase(data.Dataset):
         with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
             csvf = csv.DictReader(fp)
             for row in csvf:
-                if not row['Projection'] == 'PA':
+                if not row['Projection'] == 'L':
                     continue
                 labels = row['Labels'].strip("[]").split(',')
                 labels = [l.strip("\\ '") for l in labels]
