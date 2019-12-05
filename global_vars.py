@@ -34,29 +34,29 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
 """
 d2_compatiblity = {
     # This can be used as d2 for            # this
-    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
-    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHCC', 'NIHCC', 'NIHChestBinaryTrainSplit'],
-    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit'],
+    'MNIST'                                 : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit', 'PADChest'],
+    'NotMNIST'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit', 'PADChest'],
+    'FashionMNIST'                          : ['MNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit', 'PADChest'],
+    'CIFAR10'                               : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit', 'PADChest'],
+    'CIFAR100'                              : ['MNIST', 'FashionMNIST', 'CIFAR10', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit', 'PADChest'],
+    'STL10'                                 : ['MNIST', 'FashionMNIST', 'CIFAR100', 'TinyImagenet', 'TinyImagenetd32', 'NIHCC', 'NIHCC', 'NIHChestBinaryTrainSplit', 'PADChest'],
+    'TinyImagenet'                          : ['MNIST', 'FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'STL10d32', 'NIHCC', 'NIHChestBinaryTest', 'NIHChestBinaryTrainSplit', 'PADChest'],
     'NIHChestBinary'                              : ['MNIST','FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32'],
     'NIHCC'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHCC'],
     'NIHChestBinaryValSplit'                    : ['FashionMNIST', 'CIFAR10', 'CIFAR100', 'STL10', 'TinyImagenet', 'STL10d32', 'TinyImagenetd32', 'NIHChestBinaryTrainSplit'],
-    'MURA'                                      :['NIHCC',],
-    'MURAHAND'                                      :['NIHCC',],
-    'MURAWRIST'                                      :['NIHCC',],
-    'MURAELBOW'                                      :['NIHCC',],
-    'MURAFINGER'                                      :['NIHCC',],
-    'MURAFOREARM'                                      :['NIHCC',],
-    'MURAHUMERUS'                                      :['NIHCC',],
-    'MURASHOULDER'                                      :['NIHCC',],
-    'PADChest'                                  : ['NIHCC',],
-    'PADChestAP'                                  : ['NIHCC',],
-    'PADChestL'                                  : ['NIHCC',],
-    'PADChestAPHorizontal'                       : ['NIHCC',],
-    'PADChestPED'                                  : ['NIHCC',],
+    'MURA'                                      :['NIHCC','PADChest'],
+    'MURAHAND'                                      :['NIHCC','PADChest'],
+    'MURAWRIST'                                      :['NIHCC','PADChest'],
+    'MURAELBOW'                                      :['NIHCC','PADChest'],
+    'MURAFINGER'                                      :['NIHCC','PADChest'],
+    'MURAFOREARM'                                      :['NIHCC','PADChest'],
+    'MURAHUMERUS'                                      :['NIHCC','PADChest'],
+    'MURASHOULDER'                                      :['NIHCC','PADChest'],
+    'PADChest'                                  : ['NIHCC', 'PADChest'],
+    'PADChestAP'                                  : ['NIHCC','PADChest'],
+    'PADChestL'                                  : ['NIHCC','PADChest'],
+    'PADChestAPHorizontal'                       : ['NIHCC','PADChest'],
+    'PADChestPED'                                  : ['NIHCC','PADChest'],
     # STL10 is not compatible with CIFAR10 because of the 9-overlapping classes.
     # Erring on the side of caution.
 }
@@ -96,6 +96,7 @@ dataset_reference_classifiers = {
     'STL10':                  [CLS.STL10_VGG,         CLS.STL10_Resnet],
     'TinyImagenet':           [CLS.TinyImagenet_VGG,  CLS.TinyImagenet_Resnet],
     'NIHCC':                    [CLS.NIHDenseBinary, CLS.NIHChestVGG],
+    'PADChest':                 [CLS.PADDense]
 }
 
 
@@ -112,19 +113,25 @@ dataset_reference_autoencoders = {
                               ModelFactory(AES.Residual_AE, dims=(1, 64, 64)),
                              ModelFactory(AES.ALILikeResAE, dims=(1, 64, 64)),
                              ],
+    'PADChest': [ModelFactory(AES.Generic_AE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512),
+                 ModelFactory(AES.ALILikeAE, dims=(1, 64, 64)),
+                 ],
 }
 
 dataset_reference_vaes = {
-    'MNIST':              [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
-    'FashionMNIST':       [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
-    'CIFAR10':            [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
-    'CIFAR100':           [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
-    'STL10':              [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
-    'TinyImagenet':       [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
-    'NIHCC':                [ModelFactory(AES.Generic_VAE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512),
-                                ModelFactory(AES.ALILikeVAE, dims=(1, 64, 64)),
-                             ModelFactory(AES.ALILikeResVAE, dims=(1, 64, 64)),
-                             ],
+    'MNIST': [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
+    'FashionMNIST': [ModelFactory(AES.Generic_VAE, dims=(1, 28, 28), max_channels=256, depth=8, n_hidden=96)],
+    'CIFAR10': [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+    'CIFAR100': [ModelFactory(AES.Generic_VAE, dims=(3, 32, 32), max_channels=512, depth=10, n_hidden=256)],
+    'STL10': [ModelFactory(AES.Generic_VAE, dims=(3, 96, 96), max_channels=512, depth=12, n_hidden=512)],
+    'TinyImagenet': [ModelFactory(AES.Generic_VAE, dims=(3, 64, 64), max_channels=512, depth=12, n_hidden=512)],
+    'NIHCC': [ModelFactory(AES.Generic_VAE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512),
+              ModelFactory(AES.ALILikeVAE, dims=(1, 64, 64)),
+              ModelFactory(AES.ALILikeResVAE, dims=(1, 64, 64)),
+              ],
+    'PADChest': [ModelFactory(AES.Generic_VAE, dims=(1, 64, 64), max_channels=512, depth=12, n_hidden=512),
+                 ModelFactory(AES.ALILikeVAE, dims=(1, 64, 64)),
+                 ],
 }
 
 dataset_reference_ALI = {
