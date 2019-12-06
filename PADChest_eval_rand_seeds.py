@@ -85,18 +85,18 @@ if __name__ == '__main__':
     results = init_and_load_results(results_path, args)
     methods = [
                'prob_threshold/0',  #'prob_threshold/1',
-               #'score_svm/0',          #'score_svm/1',
-               #'openmax/0',            #'openmax/1',
-               #'binclass/0',           #'binclass/1',
-               #'odin/0',              # 'odin/1',
-               #"Maha",
-               #"Maha1layer",
-               #"svknn",
+               'score_svm/0',          #'score_svm/1',
+               'openmax/0',            #'openmax/1',
+               'binclass/0',           #'binclass/1',
+               'odin/0',              # 'odin/1',
+               "Maha",
+               "Maha1layer",
+               "svknn",
 
         ]
     methods_64 = [
           'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
-        #'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
+         'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
         #'reconst_thresh/8', 'reconst_thresh/9', 'reconst_thresh/10','reconst_thresh/11',
         #'reconst_thresh/12', 'reconst_thresh/13',
          #'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
@@ -240,9 +240,9 @@ if __name__ == '__main__':
 
     # Usecase 3 Evaluation
 
-    d3_tags = ['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']
+    d3_tags = ['cardiomegaly', 'pneumothorax', 'nodule', 'mass']
 
-    args.D2 = 'PADChestL'
+    args.D2 = 'PADChest'
     for method in methods:
         print("current method", method)
         for d2 in d3_tags:
