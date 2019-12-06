@@ -321,12 +321,20 @@ class PADChestSVBase(data.Dataset):
                     continue
                 labels = row['Labels'].strip("[]").split(',')
                 labels = [l.strip("\\ '") for l in labels]
-                if not any(l in SVCLASSES for l in labels):
+                numlabel = np.zeros(len(SVCLASSES))
+                for i, svc in enumerate(SVCLASSES):
+                    for l in labels:
+                        if svc in l or l in svc:
+                            numlabel[i] = 1
+                numlabel = list(numlabel)
+                if not any(numlabel):
                     continue
+                #if not any(l in SVCLASSES for l in labels):
+                #    continue
                 imp = osp.join(self.source_dir, self.image_dir, row['ImageID'])
                 if osp.exists(imp):
                     img_list.append(row['ImageID'])
-                    numlabel = [1 if cond in labels else 0 for cond in SVCLASSES]
+                    #numlabel = [1 if cond in labels else 0 for cond in SVCLASSES]
                     label_list.append(numlabel)
         label_tensors = torch.LongTensor(label_list)
         os.makedirs(self.index_cache_path, exist_ok=True)
@@ -359,7 +367,7 @@ class PADChestSV(AbstractDomainInterface):
             transform_list = [transforms.Resize(doubledownsample),]
         else:
             transform_list = []
-        img_dir = "images-299"
+        img_dir = "images-64"
         if downsample is not None:
             print("downsampling to", downsample)
             transform = transforms.Compose(transform_list +[
@@ -375,18 +383,33 @@ class PADChestSV(AbstractDomainInterface):
 
         self.ds_all = PADChestSVBase(cache_path, source_path, transforms=transform, binary=self.binary,
                                    to_rgb=expand_channels, download=download, extract=extract, image_dir=img_dir)
-        n_train = int(0.8 * len(self.ds_all))
-        n_val = int(0.1 * len(self.ds_all))
-        n_test = len(self.ds_all) - n_train - n_val
-        self.ds_train, self.ds_valid, self.ds_test = data.random_split(self.ds_all, [n_train, n_val, n_test])
+        self.ds_all.indices = torch.arange(len(self.ds_all))
 
-        if extract:
+        self.useful_inds = self.get_filtered_inds(self.ds_all, shuffle=True)
+
+        N = len(self.useful_inds)
+        self.n_train = int(0.8 * N)
+        self.n_val = int(0.1 * N)
+        self.n_test = N - self.n_train - self.n_val
+
+        self.train_ind = self.useful_inds[:self.n_train]
+        self.val_ind = self.useful_inds[self.n_train:self.n_val+self.n_train]
+        self.test_ind = self.useful_inds[self.n_val+self.n_train:]
+
+        if test_length is not None and self.n_val > test_length:
+            self.val_d1_ind = self.val_ind[:test_length]
+        else:
+            self.val_d1_ind = self.val_ind
+
+        #self.ds_train, self.ds_valid, self.ds_test = data.random_split(self.ds_all, [self.n_train, self.n_val, self.n_test])
+
+        '''if extract:
             self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
             self.D1_valid_ind = self.get_filtered_inds(self.ds_valid, shuffle=True, max_l=self.max_l)
             self.D1_test_ind = self.get_filtered_inds(self.ds_test, shuffle=True)
 
             self.D2_valid_ind = self.get_filtered_inds(self.ds_valid, shuffle=True)
-            self.D2_test_ind = self.get_filtered_inds(self.ds_test, shuffle=True)
+            self.D2_test_ind = self.get_filtered_inds(self.ds_test, shuffle=True)'''
 
 
     def get_filtered_inds(self, basedata, shuffle=False, max_l=None):
@@ -404,7 +427,7 @@ class PADChestSV(AbstractDomainInterface):
                     keep_in_mask_label[ii] = 1
             keep_inds = []
             for seq_ind, base_ind in enumerate(basedata.indices):
-                label = basedata.dataset.label_tensors[base_ind].int()
+                label = basedata.label_tensors[base_ind].int()
                 if torch.sum(label * leave_out_mask_label) == 0 and torch.sum(label * keep_in_mask_label) > 0:
                     keep_inds.append(seq_ind)
                 else:
@@ -414,27 +437,25 @@ class PADChestSV(AbstractDomainInterface):
             output_inds = torch.arange(0, len(basedata)).long()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
-        if max_l is not None:
-            if len(output_inds) >max_l:
-                output_inds = output_inds[:max_l]
+        #if max_l is not None:
+        #    if len(output_inds) >max_l:
+        #        output_inds = output_inds[:max_l]
         return output_inds
 
     def get_D1_train(self):
-        return SubDataset(self.name, self.ds_train, self.D1_train_ind)
+        return SubDataset(self.name, self.ds_all, self.train_ind)
     def get_D1_valid(self):
-        return SubDataset(self.name, self.ds_valid, self.D1_valid_ind, label=0)
+        return SubDataset(self.name, self.ds_all, self.val_d1_ind, label=0)
     def get_D1_test(self):
-        return SubDataset(self.name, self.ds_test, self.D1_test_ind, label=0)
+        return SubDataset(self.name, self.ds_all, self.test_ind, label=0)
 
     def get_D2_valid(self, D1):
         assert self.is_compatible(D1)
-        target_indices = self.D2_valid_ind
-        return SubDataset(self.name, self.ds_valid, target_indices, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.ds_all, self.val_ind, label=1, transform=D1.conformity_transform())
 
     def get_D2_test(self, D1):
         assert self.is_compatible(D1)
-        target_indices = self.D2_test_ind
-        return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
+        return SubDataset(self.name, self.ds_all, self.test_ind, label=1, transform=D1.conformity_transform())
 
     def conformity_transform(self):
         target = 224
