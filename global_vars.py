@@ -24,7 +24,7 @@ all_dataset_classes = [ MNIST.MNIST, FMNIST.FashionMNIST, NMNIST.NotMNIST,
                         STL.STL10d32, TI.TinyImagenetd32, NC.NIHChest, NC.NIHChestBinary, NC.NIHChestBinaryTest,
                         NC.NIHChestBinaryTrainSplit, NC.NIHChestBinaryValSplit, NC.NIHChestBinaryTestSplit, MU.MURA,
                         MU.MURAHAND, MU.MURAELBOW, MU.MURAFINGER, MU.MURAFOREARM, MU.MURAHUMERUS, MU.MURASHOULDER, MU.MURAWRIST,
-                        PC.PADChest, PC.PADChestAP, PC.PADChestL, PC.PADChestAPHorizontal, PC.PADChestPED]
+                        PC.PADChest, PC.PADChestAP, PC.PADChestPA, PC.PADChestL, PC.PADChestAPHorizontal, PC.PADChestPED]
 
 """
     Not all the datasets can be used as a Dv, Dt (aka D2) for each dataset.
@@ -53,6 +53,7 @@ d2_compatiblity = {
     'MURAHUMERUS'                                      :['NIHCC','PADChest'],
     'MURASHOULDER'                                      :['NIHCC','PADChest'],
     'PADChest'                                  : ['NIHCC', 'PADChest'],
+    'PADChestPA'                                  : ['NIHCC','PADChest'],
     'PADChestAP'                                  : ['NIHCC','PADChest'],
     'PADChestL'                                  : ['NIHCC','PADChest'],
     'PADChestAPHorizontal'                       : ['NIHCC','PADChest'],

@@ -210,6 +210,12 @@ class PADChest(AbstractDomainInterface):
                                        transforms.ToTensor()
                                        ])
 
+class PADChestPA(PADChest):
+    dataset_path = "PADChest"
+    def __init__(self, root_path="./workspace/datasets/PADChest", downsample=None, expand_channels=False,
+                 test_length=None, download=False, extract=True, doubledownsample=None):
+        super(PADChestPA, self).__init__(root_path, ["PA",], downsample, expand_channels,
+                 test_length, download, extract, doubledownsample)
 
 class PADChestAP(PADChest):
     dataset_path = "PADChest"
