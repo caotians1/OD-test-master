@@ -129,3 +129,15 @@ class CIFAR100(AbstractDomainInterface):
                                    transforms.Resize((32, 32)),
                                    transforms.ToTensor(),                                   
                                    ])                               
+
+
+if __name__ == "__main__":
+    dataset = CIFAR10()
+    d1_train = dataset.get_D1_train()
+    print(len(d1_train))
+
+    import matplotlib.pyplot as plt
+    for batch_ind in range(len(d1_train)):
+        print(batch_ind)
+        x, y = d1_train[batch_ind]
+        plt.imshow(x.numpy().reshape(dataset.image_size))

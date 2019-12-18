@@ -88,8 +88,8 @@ class PCAM(AbstractDomainInterface):
                                             transforms.ToTensor(),]
             if self.shrink_channels:
                 transform_list += [transforms.Grayscale(),]
-            else:
-                transform_list += [transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),]
+            #    else:
+            #    transform_list += [transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),]
             transform = transforms.Compose(transform_list)
             self.image_size = (downsample, downsample)
         else:
@@ -97,8 +97,8 @@ class PCAM(AbstractDomainInterface):
                                transforms.ToTensor(), ]
             if self.shrink_channels:
                 transform_list += [transforms.Grayscale(),]
-            else:
-                transform_list += [transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),]
+            #else:
+            #    transform_list += [transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),]
             transform = transforms.Compose(transform_list)
             self.image_size = (224, 224)
 
@@ -172,3 +172,14 @@ class PCAMGray(PCAM):
         shrink_channels = True
         super(PCAMGray, self).__init__(root_path, downsample, shrink_channels, test_length, download, extract,
                                        doubledownsample)
+
+if __name__ == "__main__":
+
+    data1 = PCAM()
+    d1 = data1.get_D1_train()
+    import matplotlib.pyplot as plt
+    print(len(d1))
+    for i in range(10):
+        x, y = d1[i]
+        x2 = x * 0.229 + 0.485
+        plt.imshow(x2.numpy().transpose((1, 2, 0)))
