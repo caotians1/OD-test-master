@@ -83,22 +83,22 @@ if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
     methods = [
-               #'prob_threshold/0',  #'prob_threshold/1',
-               #'score_svm/0',          #'score_svm/1',
-               #'openmax/0',            #'openmax/1',
-               #'binclass/0',           #'binclass/1',
-               #'odin/0',              # 'odin/1',
-               #"Maha",
-               #"Maha1layer",
-               #"svknn",
+               'prob_threshold/0',  #'prob_threshold/1',
+               'score_svm/0',          #'score_svm/1',
+               'openmax/0',            #'openmax/1',
+               'binclass/0',           #'binclass/1',
+               'odin/0',              # 'odin/1',
+               "Maha",
+               "Maha1layer",
+               "svknn",
 
         ]
     methods_64 = [
-          #'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
-        #'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
+          'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
+        'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
         #'reconst_thresh/8', 'reconst_thresh/9', 'reconst_thresh/10','reconst_thresh/11',
         #'reconst_thresh/12', 'reconst_thresh/13',
-         #'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
+         'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
         'aliknnsvm/1','aliknnsvm/8',
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
           'vaemseaeknn/1','vaebceaeknn/1', 'mseaeknn/1', 'bceaeknn/1',
@@ -121,13 +121,13 @@ if __name__ == '__main__':
         'CIFAR10',
         'STL10',
         'TinyImagenet',
-        #'MURAHAND',
-        #'MURAWRIST',
-        #'MURAELBOW',
-        #'MURAFINGER',
-        #'MURAFOREARM',
-        #'MURAHUMERUS',
-        #'MURASHOULDER',
+        'MURAHAND',
+        'MURAWRIST',
+        'MURAELBOW',
+        'MURAFINGER',
+        'MURAFOREARM',
+        'MURAHUMERUS',
+        'MURASHOULDER',
     ]
 
 
