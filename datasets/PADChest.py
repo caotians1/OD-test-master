@@ -367,7 +367,7 @@ class PADChestSV(AbstractDomainInterface):
             transform_list = [transforms.Resize(doubledownsample),]
         else:
             transform_list = []
-        img_dir = "images-64"
+        img_dir = "images-299"
         if downsample is not None:
             print("downsampling to", downsample)
             transform = transforms.Compose(transform_list +[

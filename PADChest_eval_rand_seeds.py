@@ -110,7 +110,7 @@ if __name__ == '__main__':
 
     D1 = PADChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'PADChest'), binary=True)
     D164 = PADChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "PADChest"), binary=True, downsample=64)
-    args.D1 = 'PADChestL'
+    args.D1 = 'PADChest'
 
     All_ODs = [
         'UniformNoise',

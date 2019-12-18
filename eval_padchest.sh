@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --tmp=256G
 #SBATCH --time=48:00:00
-#SBATCH -a 0-6
+#SBATCH -a 0-9
 
 PARRAY1=(0 1 2 3 4 5 6 7 8 9)
 
