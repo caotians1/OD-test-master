@@ -133,12 +133,18 @@ class RIGA(AbstractDomainInterface):
             print("downsampling to", downsample)
             transform = transforms.Compose(transform_list +
                                            [transforms.Resize((downsample, downsample)),
-                                            transforms.ToTensor()])
+                                            transforms.ToTensor(),
+                                            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                 std=[0.229, 0.224, 0.225]),
+                                            ])
             self.image_size = (downsample, downsample)
         else:
             transform = transforms.Compose(transform_list +
                                             [transforms.Resize((224, 224)),
-                                            transforms.ToTensor()])
+                                            transforms.ToTensor(),
+                                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                  std=[0.229, 0.224, 0.225]),
+                                             ])
             self.image_size = (224, 224)
 
         self.ds_train = RIGABase(cache_path, source_path, "train", transforms=transform,
@@ -204,10 +210,14 @@ class RIGA(AbstractDomainInterface):
                                        ])
 
 if __name__ == "__main__":
-    data1 = RIGA("workspace\\datasets\\RIGA-dataset")
+    #data1 = RIGA("workspace\\datasets\\RIGA-dataset")
+    data1 = RIGA()
     d1 = data1.get_D1_train()
+    import matplotlib.pyplot as plt
     print(len(d1))
     for i in range(10):
         x, y = d1[i]
+        x2 = x * 0.229 + 0.485
+        plt.imshow(x2.numpy().transpose((1, 2, 0)))
 
 

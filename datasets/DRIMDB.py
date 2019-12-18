@@ -11,7 +11,7 @@ import numpy as np
 
 
 class DRIMDBBase(data.Dataset):
-    def __init__(self, index_cache_path, source_dir, split, image_path="images_244.npy", imsize=224, transforms=None,
+    def __init__(self, index_cache_path, source_dir, split, image_path="images_224.npy", imsize=224, transforms=None,
                  to_gray=False, download=False, extract=True):
         super(DRIMDBBase,self).__init__()
         self.index_cache_path = index_cache_path
@@ -87,12 +87,18 @@ class DRIMDB(AbstractDomainInterface):
             print("downsampling to", downsample)
             transform = transforms.Compose(transform_list +
                                            [transforms.Resize((downsample, downsample)),
-                                            transforms.ToTensor()])
+                                            transforms.ToTensor(),
+                                            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                 std=[0.229, 0.224, 0.225]),
+                                            ])
             self.image_size = (downsample, downsample)
         else:
             transform = transforms.Compose(transform_list +
                                             [transforms.Resize((224, 224)),
-                                            transforms.ToTensor()])
+                                            transforms.ToTensor(),
+                                             transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                                  std=[0.229, 0.224, 0.225]),
+                                             ])
             self.image_size = (224, 224)
 
         self.ds_train = DRIMDBBase(cache_path, source_path, "train", transforms=transform,
@@ -156,3 +162,14 @@ class DRIMDB(AbstractDomainInterface):
                                        transforms.ToTensor(),
                                        transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                                        ])
+
+if __name__ == "__main__":
+    dataset = DRIMDB()
+    d1_train = dataset.get_D1_train()
+    print(len(d1_train))
+    loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
+    import matplotlib.pyplot as plt
+    for batch, batch_ind in zip(loader, range(10)):
+        print(batch_ind)
+        x, y = batch
+        plt.imshow(x[0].numpy().transpose((1,2,0)))

@@ -210,4 +210,12 @@ class DRD(AbstractDomainInterface):
                                        ])
 
 if __name__ == "__main__":
-    pass
+    dataset = DRD()
+    d1_train = dataset.get_D1_train()
+    print(len(d1_train))
+    loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
+    import matplotlib.pyplot as plt
+    for batch, batch_ind in zip(loader, range(10)):
+        print(batch_ind)
+        x, y = batch
+        plt.imshow(x[0].numpy().transpose((1,2,0)))

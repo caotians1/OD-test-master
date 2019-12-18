@@ -7,6 +7,7 @@ import os.path as osp
 import csv
 import subprocess
 from PIL import Image
+from skimage import io
 import numpy as np
 
 N_CLASS = 5
@@ -25,7 +26,7 @@ def group_normalize(crops):
 class PADChestBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir,
                  index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images-64",
-                 imsize=224, transforms=None, binary=False, to_rgb=False, download=False, extract=True):
+                 imsize=224, transforms=None, binary=False, download=False, extract=True):
         super(PADChestBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
@@ -34,7 +35,6 @@ class PADChestBase(data.Dataset):
         self.image_dir = image_dir
         self.imsize = imsize
         self.binary = binary
-        self.to_rgb = to_rgb
         if transforms is None:
             self.transforms = transforms.Compose([transforms.Resize((imsize,imsize)),
                                                 transforms.ToTensor()])
@@ -57,12 +57,23 @@ class PADChestBase(data.Dataset):
         img_name = self.img_list[item]
         label = self.label_tensors[item]
         imp = osp.join(self.source_dir, self.image_dir, img_name)
-        with open(imp, 'rb') as f:
+        img = io.imread(imp, as_gray=True)
+        if np.max(img) > 256:
+            img = img / (256*256)
+        elif np.max(img) > 1:
+            img = img / np.max(img)
+        img = Image.fromarray(img)
+        img = self.transforms(img)
+        #if self.to_rgb:
+        #    img = self.transforms(img)#.convert('RGB'))
+        #else:
+        #    img = self.transforms(img)#.convert('L'))
+        '''with open(imp, 'rb') as f:
             with Image.open(f) as img:
                 if self.to_rgb:
                     img = self.transforms(img.convert('RGB'))
                 else:
-                    img = self.transforms(img.convert('L'))
+                    img = self.transforms(img.convert('L'))'''
         return img, label
 
     def extract(self):
@@ -136,7 +147,7 @@ class PADChest(AbstractDomainInterface):
             self.image_size = (64, 64)
 
         self.ds_all = PADChestBase(cache_path, source_path, transforms=transform,
-                                     to_rgb=expand_channels, download=download, extract=extract)
+                                   download=download, extract=extract)
         n_train = int(0.6*len(self.ds_all))     # A generous 6-4 split since we don't use the train split at all...
         n_val = len(self.ds_all) - n_train
         self.ds_train, self.ds_valid = data.random_split(self.ds_all, [n_train, n_val])
@@ -252,7 +263,7 @@ class PADChestPED(PADChest):
 class PADChestSVBase(data.Dataset):
     def __init__(self, index_cache_path, source_dir,
                  index_file="PADCHEST_chest_x_ray_images_labels_160K_01.02.19.csv", image_dir="images-299",
-                 imsize=224, transforms=None, binary=False, to_rgb=False, download=False, extract=True):
+                 imsize=224, transforms=None, binary=False, download=False, extract=True):
         super(PADChestSVBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
@@ -261,7 +272,7 @@ class PADChestSVBase(data.Dataset):
         self.image_dir = image_dir
         self.imsize = imsize
         self.binary = binary
-        self.to_rgb = to_rgb
+
         if transforms is None:
             self.transforms = transforms.Compose([transforms.Resize((imsize,imsize)),
                                                 transforms.ToTensor()])
@@ -285,12 +296,20 @@ class PADChestSVBase(data.Dataset):
         if self.binary:
             label = label[7] * (torch.sum(label) == 1)
         imp = osp.join(self.source_dir, self.image_dir, img_name)
-        with open(imp, 'rb') as f:
+        img = io.imread(imp, as_gray=True)
+        if np.max(img) > 256:
+            img = img / (256 * 256)
+        elif np.max(img) > 1:
+            img = img / np.max(img)
+        img = Image.fromarray(img)
+        img = self.transforms(img)
+
+        '''with open(imp, 'rb') as f:
             with Image.open(f) as img:
                 if self.to_rgb:
                     img = self.transforms(img.convert('RGB'))
                 else:
-                    img = self.transforms(img.convert('L'))
+                    img = self.transforms(img.convert('L'))'''
         return img, label
 
     def extract(self):
@@ -382,7 +401,7 @@ class PADChestSV(AbstractDomainInterface):
             self.image_size = (224, 224)
 
         self.ds_all = PADChestSVBase(cache_path, source_path, transforms=transform, binary=self.binary,
-                                   to_rgb=expand_channels, download=download, extract=extract, image_dir=img_dir)
+                                     download=download, extract=extract, image_dir=img_dir)
         self.ds_all.indices = torch.arange(len(self.ds_all))
 
         self.useful_inds = self.get_filtered_inds(self.ds_all, shuffle=True)
