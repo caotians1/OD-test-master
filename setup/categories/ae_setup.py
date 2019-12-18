@@ -182,11 +182,15 @@ def train_autoencoder(args, model, dataset, BCE_Loss):
             # vis in tensorboard
             for (image, label) in config.valid_loader:
                 prediction = model(image.cuda()).data.cpu().squeeze().numpy()
+                prediction = (prediction - prediction.min())/(prediction.max() - prediction.min())
                 if len(prediction.shape) > 3 and prediction.shape[1] == 3:
                     prediction = prediction.transpose((0,2,3,1))        # change to N W H C
                 N = min(prediction.shape[0], 5)
                 fig, ax = plt.subplots(N, 2)
                 image = image.data.squeeze().numpy()
+                image = (image - image.min())/(image.max() - image.min())
+                if len(image.shape) > 3 and image.shape[1] == 3:
+                    image = image.transpose((0,2,3,1))
                 for i in range(N):
                     ax[i, 0].imshow(prediction[i])
                     ax[i, 1].imshow(image[i])
@@ -259,11 +263,15 @@ def train_variational_autoencoder(args, model, dataset, BCE_Loss=True):
             # vis in tensorboard
             for (image, label) in config.valid_loader:
                 prediction = model(image.cuda()).data.cpu().squeeze().numpy()
+                prediction = (prediction - prediction.min()) / (prediction.max() - prediction.min())
                 if len(prediction.shape) > 3 and prediction.shape[1] == 3:
                     prediction = prediction.transpose((0,2,3,1))        # change to N W H C
                 N = min(prediction.shape[0], 5)
                 fig, ax = plt.subplots(N, 2)
                 image = image.data.squeeze().numpy()
+                image = (image - image.min()) / (image.max() - image.min())
+                if len(image.shape) > 3 and image.shape[1] == 3:
+                    image = image.transpose((0,2,3,1))
                 for i in range(N):
                     ax[i, 0].imshow(prediction[i])
                     ax[i, 1].imshow(image[i])

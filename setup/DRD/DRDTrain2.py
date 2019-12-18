@@ -13,7 +13,7 @@ import torchvision
 from torch.utils.data.sampler import WeightedRandomSampler
 import numpy as np
 from torch import optim
-import categories.classifier_setup as CLSetup
+import setup.categories.classifier_setup as CLSetup
 from models.classifiers import DRDDense
 from datasets.DRD import DRD
 
