@@ -156,7 +156,7 @@ def make_plot(filename, title, true_d2_handles, method_handles, csv_data):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", type=str, help="save images and csvs here")
-    parser.add_argument("--result_dir", type=str, default="workspace/experiments/new_padchest_eval", help="path to folder of result_n.pth files")
+    parser.add_argument("--result_dir", type=str, default="workspace/experiments/padchest_res_raw", help="path to folder of result_n.pth files")
     parser.add_argument("--cache_dir", type=str, help="load cached results from here (precedes results path when specified)")
     parser.add_argument("--dataset", default="PAD", help="PAD or NIHCC")
     args = parser.parse_args()
@@ -182,7 +182,6 @@ if __name__ == "__main__":
                    'PADChestL_nodule',
                    'PADChestL_mass',
                    ]
-
                   ]
     elif args.dataset == "NIHCC":
         d2sets = [["CIFAR",
@@ -196,8 +195,8 @@ if __name__ == "__main__":
                    'STL10',
                    'TinyImagenet',
                    ],
-                  "PAD",
-                  "NIHCC"
+                  ["PAD",],
+                  ["NIHCC",],
                   ]
     if args.cache_dir is None:
         dir_path = args.result_dir
