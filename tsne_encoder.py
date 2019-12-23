@@ -2,6 +2,7 @@ import numpy as np
 import csv, os
 import torch
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, TensorDataset
 import global_vars as Global
@@ -14,6 +15,8 @@ import models as Models
 from easydict import EasyDict
 import _pickle
 from datasets.NIH_Chest import NIHChest
+from datasets.PADChest import PADChestBinaryTrainSplit, PADChestBinaryValSplit, PADChestBinaryTestSplit, PADChestSV
+import umap
 
 All_OD1 = [
         'UniformNoise',
@@ -33,13 +36,19 @@ All_OD1 = [
         #'MURAHUMERUS',
         #'MURASHOULDER',
     ]
-ALL_OD2 = [
+ALL_OD2_NIH = [
             "PADChestAP",
             "PADChestL",
            "PADChestAPHorizontal",
            "PADChestPED"
 ]
-d3_tags = ['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']
+ALL_OD2_PAD = ["PADChestAP",
+                "PADChestPA",
+               "PADChestAPHorizontal",
+               "PADChestPED"
+               ]
+d3_tags_NIH = ['Cardiomegaly', 'Pneumothorax', 'Nodule', 'Mass']
+d3_tags_PAD = ['cardiomegaly', 'pneumothorax', 'nodule', 'mass']
 
 def proc_data(args, model, D1, d2s, tags):
     Out_X = []
@@ -84,13 +93,16 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42, help='Random seed. (default 42)')
     parser.add_argument('--exp', '--experiment_id', type=str, default='test', help='The Experiment ID. (default test)')
     parser.add_argument('--embedding_function', type=str, default="VAE")
-    parser.add_argument('--model_path', type=str, default="model_ref/Generic_VAE.HClass/NIHCC.dataset/BCE.max.512.d.12.nH.1024/model.best.pth")
-    parser.add_argument('--points_per_d2', type=int, default=64)
-    parser.add_argument('--lr', type=float, default=200)
-    parser.add_argument('--perplexity', type=float, default=50.0)
-    parser.add_argument('--n_iter', type=int, default=1000)
+    parser.add_argument('--dataset', type=str, default="nihcc")
+    parser.add_argument('--encoder_loss', type=str, default='bce')
+    #parser.add_argument('--model_path', type=str, default="model_ref/Generic_VAE.HClass/NIHCC.dataset/BCE.max.512.d.12.nH.1024/model.best.pth")
+    parser.add_argument('--umap', action="store_true")
+    parser.add_argument('--points_per_d2', type=int, default=1024)
+    parser.add_argument('--lr', type=float, default=0.1, help="learning rate in tsne mode, min_dist in umap mode")
+    parser.add_argument('--perplexity', type=float, default=100.0, help="perplexity in tsne mode, n_neighbor in umap mode")
+    parser.add_argument('--n_iter', type=int, default=1000, help="n iter in tsne mode, n epoch in umap mode")
     parser.add_argument('--load', action="store_true")
-    parser.add_argument('--plot_percent', default=1.0, type=float)
+    parser.add_argument('--plot_percent', default=0.5, type=float)
     args = parser.parse_args()
     args.experiment_id = args.exp
 
@@ -117,9 +129,13 @@ if __name__ == "__main__":
         args.experiment_path = exp_paths
 
     #####################################################################################################
-    if not args.load or not os.path.exists(os.path.join(args.experiment_path, "all_embs_UC1.npy")):
+    if not args.load or not os.path.exists(os.path.join(args.experiment_path, "all_embs_UC3_ppd_%d_d1_%s.npy"% (args.points_per_d2, args.dataset))):
+        assert args.dataset in ['NIHCC', 'PADChest']
+        if args.dataset.lower() == 'nihcc':
+            D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64)
+        elif args.dataset.lower() == "padchest":
+            D164 = PADChestBinaryTrainSplit(root_path=os.path.join(args.root_path, "PADChest"), binary=True, downsample=64)
 
-        D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64)
         D1 = D164.get_D1_train()
 
         emb = args.embedding_function.lower()
@@ -127,21 +143,25 @@ if __name__ == "__main__":
         dummy_args = EasyDict()
         dummy_args.exp = "foo"
         dummy_args.experiment_path = args.experiment_path
+        if args.encoder_loss.lower() == "bce":
+            tag = "BCE"
+        else:
+            tag = "MSE"
         if emb == "vae":
-            model = Global.dataset_reference_vaes["NIHCC"][0]()
+            model = Global.dataset_reference_vaes[args.dataset][0]()
             home_path = Models.get_ref_model_path(dummy_args, model.__class__.__name__, D164.name,
-                                                  suffix_str="BCE." + model.netid)
+                                                  suffix_str=tag + "." + model.netid)
             model_path = os.path.join(home_path, 'model.best.pth')
         elif emb == "ae":
-            model = Global.dataset_reference_autoencoders["NIHCC"][0]()
+            model = Global.dataset_reference_autoencoders[args.dataset][0]()
 
             home_path = Models.get_ref_model_path(dummy_args, model.__class__.__name__, D164.name,
-                                                  suffix_str="MSE." + model.netid)
+                                                  suffix_str=tag + "." + model.netid)
             model_path = os.path.join(home_path, 'model.best.pth')
         else:
-            model = Global.dataset_reference_ALI["NIHCC"][0]()
+            model = Global.dataset_reference_ALI[args.dataset][0]()
             home_path = Models.get_ref_model_path(dummy_args, model.__class__.__name__, D164.name,
-                                                  suffix_str="BCE." + model.netid)
+                                                  suffix_str=tag + "." + model.netid)
             model_path = os.path.join(home_path, 'model.best.pth')
 
         model.load_state_dict(torch.load(model_path))
@@ -161,14 +181,15 @@ if __name__ == "__main__":
 
         ALL_EMBS, ALL_Y, Cat2Y = proc_data(args, model, D1, d2s, All_OD1)
 
-        with open(os.path.join(args.experiment_path, "cat2y_UC1.pkl"), "wb") as fp:
+        with open(os.path.join(args.experiment_path, "cat2y_UC1_ppd_%d_d1_%s.pkl"% (args.points_per_d2, args.dataset)), "wb") as fp:
             _pickle.dump(Cat2Y, fp)
-        np.save(os.path.join(args.experiment_path, "all_y_UC1.npy"), ALL_Y)
-        np.save(os.path.join(args.experiment_path, "all_embs_UC1.npy"), ALL_EMBS)
+        np.save(os.path.join(args.experiment_path, "all_y_UC1_ppd_%d_d1_%s.npy" % (args.points_per_d2, args.dataset)), ALL_Y)
+        np.save(os.path.join(args.experiment_path, "all_embs_UC1_ppd_%d_d1_%s.npy"% (args.points_per_d2, args.dataset)), ALL_EMBS)
 
         #######################################################################################
         d2s = []
-        for y, d2 in enumerate(ALL_OD2):
+        OD2 = ALL_OD2_NIH if args.dataset=="NIHCC" else ALL_OD2_PAD
+        for y, d2 in enumerate(OD2):
             dataset = Global.all_datasets[d2]
             if 'dataset_path' in dataset.__dict__:
                 print(os.path.join(args.root_path, dataset.dataset_path))
@@ -178,35 +199,40 @@ if __name__ == "__main__":
                 D2 = dataset().get_D2_test(D164)
             d2s.append(D2)
 
-        ALL_EMBS, ALL_Y, Cat2Y = proc_data(args, model, D1, d2s, ALL_OD2)
+        ALL_EMBS, ALL_Y, Cat2Y = proc_data(args, model, D1, d2s, OD2)
 
-        with open(os.path.join(args.experiment_path, "cat2y_UC2.pkl"), "wb") as fp:
+        with open(os.path.join(args.experiment_path, "cat2y_UC2_ppd_%d_d1_%s.pkl"% (args.points_per_d2, args.dataset)), "wb") as fp:
             _pickle.dump(Cat2Y, fp)
-        np.save(os.path.join(args.experiment_path, "all_y_UC2.npy"), ALL_Y)
-        np.save(os.path.join(args.experiment_path, "all_embs_UC2.npy"), ALL_EMBS)
+        np.save(os.path.join(args.experiment_path, "all_y_UC2_ppd_%d_d1_%s.npy"% (args.points_per_d2, args.dataset)), ALL_Y)
+        np.save(os.path.join(args.experiment_path, "all_embs_UC2_ppd_%d_d1_%s.npy"% (args.points_per_d2, args.dataset)), ALL_EMBS)
 
         #########################################################################################
         d2s = []
+        d3_tags = d3_tags_NIH if args.dataset == "NIHCC" else d3_tags_PAD
         for d2 in d3_tags:
-            D2 = NIHChest(root_path=os.path.join(args.root_path, 'NIHCC'), binary=True, test_length=5000,
-                          keep_in_classes=[d2, ]).get_D2_test(D164)
+            if args.dataset == "NIHCC":
+                D2 = NIHChest(root_path=os.path.join(args.root_path, 'NIHCC'), binary=True, test_length=5000,
+                              keep_in_classes=[d2, ]).get_D2_test(D164)
+            elif args.dataset == "PADChest":
+                D2 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
+                                keep_in_classes=[d2, ], downsample=64).get_D2_test(D164)
             d2s.append(D2)
         ALL_EMBS, ALL_Y, Cat2Y = proc_data(args, model, D1, d2s, d3_tags)
 
-        with open(os.path.join(args.experiment_path, "cat2y_UC3.pkl"), "wb") as fp:
+        with open(os.path.join(args.experiment_path, "cat2y_UC3_ppd_%d_d1_%s.pkl"% (args.points_per_d2, args.dataset)), "wb") as fp:
             _pickle.dump(Cat2Y, fp)
-        np.save(os.path.join(args.experiment_path, "all_y_UC3.npy"), ALL_Y)
-        np.save(os.path.join(args.experiment_path, "all_embs_UC3.npy"), ALL_EMBS)
+        np.save(os.path.join(args.experiment_path, "all_y_UC3_ppd_%d_d1_%s.npy"% (args.points_per_d2, args.dataset)), ALL_Y)
+        np.save(os.path.join(args.experiment_path, "all_embs_UC3_ppd_%d_d1_%s.npy"% (args.points_per_d2, args.dataset)), ALL_EMBS)
 
     else:
         pass
 
     for i in range(3):
         uc_tag = i+1
-        ALL_EMBS = np.load(os.path.join(args.experiment_path, "all_embs_UC%i.npy"%uc_tag))
-        with open(os.path.join(args.experiment_path, "cat2y_UC%i.pkl"%uc_tag), "rb") as fp:
+        ALL_EMBS = np.load(os.path.join(args.experiment_path, "all_embs_UC%i_ppd_%d_d1_%s.npy"%(uc_tag, args.points_per_d2, args.dataset)))
+        with open(os.path.join(args.experiment_path, "cat2y_UC%i_ppd_%d_d1_%s.pkl"%(uc_tag, args.points_per_d2, args.dataset)), "rb") as fp:
             Cat2Y = _pickle.load(fp)
-        ALL_Y = np.load(os.path.join(args.experiment_path, "all_y_UC%i.npy"%uc_tag))
+        ALL_Y = np.load(os.path.join(args.experiment_path, "all_y_UC%i_ppd_%d_d1_%s.npy"%(uc_tag, args.points_per_d2, args.dataset)))
         N=ALL_EMBS.shape[0]
         ALL_EMBS = ALL_EMBS.reshape(N, -1)
         N_plot = int(args.plot_percent * ALL_EMBS.shape[0])
@@ -214,8 +240,10 @@ if __name__ == "__main__":
         np.random.shuffle(rand_inds)
         rand_inds = rand_inds[:N_plot]
         ALL_Y = ALL_Y[rand_inds]
-
-        tsne = TSNE(perplexity=args.perplexity, learning_rate=args.lr, n_iter= args.n_iter)
+        if args.umap:
+            tsne = umap.UMAP(n_neighbors=int(args.perplexity), min_dist=args.lr, n_components=2, metric="euclidean", n_epochs=args.n_iter)
+        else:
+            tsne = TSNE(perplexity=args.perplexity, learning_rate=args.lr, n_iter= args.n_iter)
         palette = sns.color_palette("bright", 10)
         from matplotlib.colors import ListedColormap
         my_cmap = ListedColormap(palette.as_hex())
@@ -226,7 +254,7 @@ if __name__ == "__main__":
         fig, ax = plt.subplots()
         for k, cla in Cat2Y.items():
             target_inds = np.nonzero(ALL_Y == cla)
-            ax.scatter(X_embedded[target_inds, 0].squeeze(), X_embedded[target_inds, 1].squeeze(), c=palette.as_hex()[cla], label=k)
+            ax.scatter(X_embedded[target_inds, 0].squeeze(), X_embedded[target_inds, 1].squeeze(), c=palette.as_hex()[cla], label=k, s=3.0)
 
         #ax.scatter(X_embedded[:, 0], X_embedded[:, 1], c=ALL_Y, cmap=my_cmap)
         box = ax.get_position()
@@ -236,7 +264,10 @@ if __name__ == "__main__":
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         #ax.legend([k for k in Cat2Y.keys()])
         #plt.show()
-        plt.savefig(os.path.join(args.experiment_path, "UC_%i_tsne.png"%uc_tag), dpi=100)
+        if args.umap:
+            plt.savefig(os.path.join(args.experiment_path, "UC_%i_umap.png" % uc_tag), dpi=200)
+        else:
+            plt.savefig(os.path.join(args.experiment_path, "UC_%i_tsne.png"%uc_tag), dpi=200)
         #sns.scatterplot(X_embedded[:, 0], X_embedded[:, 1], hue=ALL_Y, legend='full', palette=palette)
         print("done")
 
