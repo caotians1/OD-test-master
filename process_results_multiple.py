@@ -2,8 +2,10 @@ import numpy as np
 import csv, os
 import torch
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
+import argparse
+import _pickle
 
 def weighted_std(values, weights, axis=None):
     if axis is None:
@@ -16,7 +18,7 @@ def weighted_std(values, weights, axis=None):
     variance = np.average((values-average)**2, weights=weights, axis=axis)
     return np.sqrt(variance)
 
-def make_plot(filename, d2_handles, title, results):
+def process_results(d2_handles, results):
     rec_error = {
         "reconst_thresh/0": "12Layer-AE-BCE",
         "reconst_thresh/1": "12Layer-AE-MSE",
@@ -35,10 +37,9 @@ def make_plot(filename, d2_handles, title, results):
     }
     if type(d2_handles) == str:
         d2_handles = [d2_handles, ]
-    use_case1_acc = []
-    use_case1_auroc = []
-    use_case1_auprc = []
-    tpr = []
+    __acc = []
+    __auroc = []
+    __auprc = []
 
     method_handles = []
     d3_handles = []
@@ -59,37 +60,48 @@ def make_plot(filename, d2_handles, title, results):
         if row[3] not in d3_handles:
             d3_handles.append(row[3])
         ind_3 = d3_handles.index(row[3])
-        use_case1_acc.append((row[6], ind_1, ind_2, ind_3))
-        use_case1_auroc.append((row[7], ind_1, ind_2, ind_3))
-        use_case1_auprc.append((row[8], ind_1, ind_2, ind_3))
-    uc1_acc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
-    uc1_roc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
-    uc1_prc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
+        __acc.append((row[6], ind_1, ind_2, ind_3))
+        __auroc.append((row[7], ind_1, ind_2, ind_3))
+        __auprc.append((row[8], ind_1, ind_2, ind_3))
+    uc_acc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
+    uc_roc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
+    uc_prc = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
     weights = np.zeros((len(method_handles), len(true_d2_handles), len(d3_handles)))
 
-    for acc, roc, prc in zip(use_case1_acc, use_case1_auroc, use_case1_auprc):
+    for acc, roc, prc in zip(__acc, __auroc, __auprc):
         try:
             weights[prc[1], prc[2], prc[3]] += 1
-            uc1_acc[acc[1], acc[2], acc[3]] = uc1_acc[acc[1], acc[2], acc[3]] * (weights[acc[1], acc[2], acc[3]] - 1) / weights[acc[1], acc[2], acc[3]]\
-                                              + acc[0] /(weights[acc[1], acc[2], acc[3]])
-            uc1_roc[roc[1], roc[2], roc[3]] = uc1_roc[roc[1], roc[2], roc[3]] * (weights[roc[1], roc[2], roc[3]] - 1) / weights[roc[1], roc[2], roc[3]]\
-                                              + roc[0] /(weights[roc[1], roc[2], roc[3]])
-            uc1_prc[prc[1], prc[2], prc[3]] = uc1_prc[prc[1], prc[2], prc[3]] * (weights[prc[1], prc[2], prc[3]] - 1) / weights[prc[1], prc[2], prc[3]]\
-                                              + prc[0] /(weights[prc[1], prc[2], prc[3]])
+            uc_acc[acc[1], acc[2], acc[3]] = uc_acc[acc[1], acc[2], acc[3]] * (weights[acc[1], acc[2], acc[3]] - 1) / \
+                                             weights[acc[1], acc[2], acc[3]] \
+                                             + acc[0] / (weights[acc[1], acc[2], acc[3]])
+            uc_roc[roc[1], roc[2], roc[3]] = uc_roc[roc[1], roc[2], roc[3]] * (weights[roc[1], roc[2], roc[3]] - 1) / \
+                                             weights[roc[1], roc[2], roc[3]] \
+                                             + roc[0] / (weights[roc[1], roc[2], roc[3]])
+            uc_prc[prc[1], prc[2], prc[3]] = uc_prc[prc[1], prc[2], prc[3]] * (weights[prc[1], prc[2], prc[3]] - 1) / \
+                                             weights[prc[1], prc[2], prc[3]] \
+                                             + prc[0] / (weights[prc[1], prc[2], prc[3]])
         except:
             pass
     inds_0, inds_1, inds_2 = np.nonzero(np.array(weights == 0))
 
     for i in range(len(inds_0)):
-        print(method_handles[inds_0[i]],", ", true_d2_handles[inds_1[i]], ",", d3_handles[inds_2[i]], ", has no entry")
-    # method means
-    uc1_accm = np.average(uc1_acc, axis=(1,2), weights=weights)
-    uc1_rocm = np.average(uc1_roc, axis=(1,2), weights=weights)
-    uc1_prcm = np.average(uc1_prc, axis=(1,2), weights=weights)
+        print(method_handles[inds_0[i]], ", ", true_d2_handles[inds_1[i]], ",", d3_handles[inds_2[i]], ", has no entry")
 
-    uc1_accv = weighted_std(uc1_acc, weights, axis=(1,2))
-    uc1_rocv = weighted_std(uc1_roc, weights, axis=(1,2))
-    uc1_prcv = weighted_std(uc1_prc, weights, axis=(1,2))
+    return np.stack([weights, uc_acc, uc_roc, uc_prc]), [method_handles, true_d2_handles, d3_handles]
+
+
+def make_plot(filename, title, true_d2_handles, method_handles, csv_data):
+    weights = csv_data[0]
+    uc_acc = csv_data[1]
+    uc_roc = csv_data[2]
+    uc_prc = csv_data[3]
+    uc1_accm = np.average(uc_acc, axis=(1,2), weights=weights)
+    uc1_rocm = np.average(uc_roc, axis=(1,2), weights=weights)
+    uc1_prcm = np.average(uc_prc, axis=(1,2), weights=weights)
+
+    uc1_accv = weighted_std(uc_acc, weights, axis=(1,2))
+    uc1_rocv = weighted_std(uc_roc, weights, axis=(1,2))
+    uc1_prcv = weighted_std(uc_prc, weights, axis=(1,2))
     def proc_var(m, v):
         upper = []
         lower = []
@@ -103,13 +115,6 @@ def make_plot(filename, d2_handles, title, results):
     uc1_accv = proc_var(uc1_accm, uc1_accv)
     uc1_rocv = proc_var(uc1_rocm, uc1_rocv)
     uc1_prcv = proc_var(uc1_prcm, uc1_prcv)
-    #uc1_accq = np.quantile(uc1_acc, [.25, .75], axis=1)
-    #uc1_rocq = np.quantile(uc1_roc, [.25, .75], axis=1)
-    #uc1_prcq = np.quantile(uc1_prc, [.25, .75], axis=1)
-
-    #accdelta = np.array((uc1_accq[1, :] - uc1_accm, uc1_accm - uc1_accq[0, :]))
-    #rocdelta = np.array((uc1_rocq[1, :] - uc1_rocm, uc1_rocm - uc1_rocq[0, :]))
-    #prcdelta = np.array((uc1_prcq[1, :] - uc1_prcm, uc1_prcm - uc1_prcq[0, :]))
 
     fig, ax = plt.subplots()
     ind = np.arange(len(uc1_accm))  # the x locations for the groups
@@ -124,7 +129,7 @@ def make_plot(filename, d2_handles, title, results):
     ax.set_xticks(ind)
     ax.set_xticklabels(method_handles, rotation=45, ha='right')
     title_str = title + ", D2="
-    for handle in d2_handles:
+    for handle in true_d2_handles:
         title_str += handle+', '
     title_str += "error bar shows std"
     ax.set_title(title_str)
@@ -135,49 +140,115 @@ def make_plot(filename, d2_handles, title, results):
 
     backend = matplotlib.get_backend()
 
-    if backend == "QT" or "Qt5Agg":
+    if backend == "QT" or backend == "Qt5Agg":
         manager = plt.get_current_fig_manager()
         manager.window.showMaximized()
     elif backend == "TkAgg":
         manager = plt.get_current_fig_manager()
         manager.resize(*manager.window.maxsize())
-    else:
-        manager = plt.get_current_fig_manager()
-        manager.frame.Maximize(True)
+    #else:
+    #    manager = plt.get_current_fig_manager()
+    #    manager.frame.Maximize(True)
     plt.show()
-    plt.savefig(filename, dpi=100)
+    plt.savefig(filename, dpi=300)
     return
 
 if __name__ == "__main__":
-    dir_path = "workspace/experiments/Chest_eval"
-    res = []
-    for root, dirs, files in os.walk(dir_path):
-        print(files)
-        res = files
-    all_results = []
-    for file in res:
-        res_path = os.path.join(dir_path, file)
-        results = torch.load(res_path)['results']
-        all_results.extend(results)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("output_dir", type=str, help="save images and csvs here")
+    parser.add_argument("--result_dir", type=str, default="workspace/experiments/new_padchest_eval", help="path to folder of result_n.pth files")
+    parser.add_argument("--cache_dir", type=str, help="load cached results from here (precedes results path when specified)")
+    parser.add_argument("--dataset", default="PAD", help="PAD or NIHCC")
+    args = parser.parse_args()
+    if args.dataset == "PAD":
+        d2sets = [["CIFAR",
+                   "MURA",
+                   "Noise",
+                   'MNIST',
+                   'FashionMNIST',
+                   'NotMNIST',
+                   'CIFAR100',
+                   'CIFAR10',
+                   'STL10',
+                   'TinyImagenet',
+                   ],
+                  ['PADChestAPHorizontal',
+                   'PADChestPED',
+                   'PADChestAP',
+                   'PADChestPA',
+                   ],
+                  ['PADChestL_cardiomegaly',
+                   'PADChestL_pneumothorax',
+                   'PADChestL_nodule',
+                   'PADChestL_mass',
+                   ]
 
-    filenames = ["UC1.png",
-                 "UC2.png",
-                 "UC3.png",
-                 ]
-    d2sets = [["CIFAR",
-               "MURA",
-               "Noise",
-               'MNIST',
-               'FashionMNIST',
-               'NotMNIST',
-               'CIFAR100',
-               'CIFAR10',
-               'STL10',
-               'TinyImagenet',
-               ],
-              "PAD",
-              "NIHCC",
-              ]
-    titles = ["Usecase 1", "Usecase 2", "Usecase 3"]
-    for fn, d2, title in zip(filenames, d2sets, titles):
-        make_plot(fn, d2, title, all_results)
+                  ]
+    elif args.dataset == "NIHCC":
+        d2sets = [["CIFAR",
+                   "MURA",
+                   "Noise",
+                   'MNIST',
+                   'FashionMNIST',
+                   'NotMNIST',
+                   'CIFAR100',
+                   'CIFAR10',
+                   'STL10',
+                   'TinyImagenet',
+                   ],
+                  "PAD",
+                  "NIHCC"
+                  ]
+    if args.cache_dir is None:
+        dir_path = args.result_dir
+        res = []
+        for root, dirs, files in os.walk(dir_path):
+            print(files)
+            res = files
+        all_results = []
+        for file in res:
+            res_path = os.path.join(dir_path, file)
+            results = torch.load(res_path)['results']
+            all_results.extend(results)
+
+    if not os.path.isdir(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    for i, d2tags in zip(range(1,4,1), d2sets):
+        if args.cache_dir is None:
+            csv_data, csv_headers = process_results(d2tags, all_results)
+            np.save(os.path.join(args.output_dir, "data_UC%d_%s.npy" % (i, args.dataset)), csv_data)
+            with open(os.path.join(args.output_dir, "headers_UC%d_%s.pkl" % (i, args.dataset)), "wb") as fp:
+                _pickle.dump(csv_headers, fp)
+            csv_list = [["D1", "Method", "D2", "D3", "multiplicity", "Accuracy (%)", "AUROC (%)", "AUPRC (%)"],]
+            for m in range(csv_data.shape[1]):
+                for d2 in range(csv_data.shape[2]):
+                    for d3 in range(csv_data.shape[3]):
+                        if int(csv_data[0, m, d2, d3]) == 0:
+                            continue
+                        csv_list.append([args.dataset, csv_headers[0][m], csv_headers[1][d2], csv_headers[2][d3],
+                                         int(csv_data[0, m, d2, d3]),   #weight
+                                         csv_data[1, m, d2, d3]*100.,   #acc
+                                         csv_data[2, m, d2, d3]*100.,   #auc
+                                         csv_data[3, m, d2, d3]*100.,    #prc
+                                         ])
+            with open(os.path.join(args.output_dir, "data_UC%d_%s.csv" % (i, args.dataset)), "w+") as fp:
+                writer = csv.writer(fp)
+                for row in csv_list:
+                    writer.writerow(row)
+
+        else:
+            assert os.path.isfile(os.path.join(args.cache_dir, "data_UC%d_%s.npy" % (i, args.dataset)))
+            csv_data = np.load(os.path.join(args.cache_dir, "data_UC%d_%s.npy" % (i, args.dataset)))
+            assert os.path.isfile(os.path.join(args.cache_dir, "headers_UC%d_%s.pkl" % (i, args.dataset)))
+            with open(os.path.join(args.cache_dir, "headers_UC%d_%s.pkl" % (i, args.dataset)), "rb") as fp:
+                csv_headers = _pickle.load(fp)
+
+        fn = os.path.join(args.output_dir, "UC%d_%s.png" % (i, args.dataset))
+
+        make_plot(fn, "Usecase %d" % i, d2tags, csv_headers[0], csv_data)
+
+
+
+
+
