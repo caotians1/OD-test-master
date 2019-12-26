@@ -636,7 +636,8 @@ class PCAMDense(nn.Module, PartialForwardable):
         super(PCAMDense, self).__init__()
         self.train_features = train_features
         self.densenet121 = Densenet.densenet121(pretrained=False)
-        self.load_state_dict(torch.load(pretrained_weights_path), strict=False)
+        if pretrained_weights_path is not None:
+            self.load_state_dict(torch.load(pretrained_weights_path), strict=False)
         feature_dim = self.densenet121.classifier.in_features
         self.densenet121.classifier =nn.Linear(feature_dim, 2)
 

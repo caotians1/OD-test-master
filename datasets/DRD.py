@@ -202,11 +202,11 @@ class DRD(AbstractDomainInterface):
                                        transforms.ToTensor()
                                        ])
         else:
-            return transforms.Compose([
+            return transforms.Compose([ExpandRGBChannels(),
                                        transforms.ToPILImage(),
                                        transforms.Resize((target, target)),
                                        transforms.ToTensor(),
-                                       transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                       #transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                                        ])
 
 if __name__ == "__main__":

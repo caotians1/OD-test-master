@@ -5,20 +5,21 @@ from datasets import SubDataset, AbstractDomainInterface, ExpandRGBChannels
 import os
 import os.path as osp
 import csv
+import numpy as np
 import subprocess
 from PIL import Image
-import numpy as np
+from zipfile import ZipFile
 
 
-class DRIMDBBase(data.Dataset):
-    def __init__(self, index_cache_path, source_dir, split, image_path="images_224.npy", imsize=224, transforms=None,
+class MalariaBase(data.Dataset):
+    def __init__(self, index_cache_path, source_dir, split, image_dir="cell_images", imsize=224, transforms=None,
                  to_gray=False, download=False, extract=True):
-        super(DRIMDBBase,self).__init__()
+        super(MalariaBase,self).__init__()
         self.index_cache_path = index_cache_path
         self.source_dir = source_dir
         self.split = split
         self.imsize = imsize
-        self.image_path = image_path
+        self.image_dir = image_dir
         self.to_gray = to_gray
         if transforms is None:
             self.transforms = transforms.Compose([transforms.Resize((imsize, imsize)),
@@ -27,8 +28,11 @@ class DRIMDBBase(data.Dataset):
             self.transforms = transforms
         assert split in ["train", "val", "test"]
         if extract:
-            self.data = np.load(osp.join(source_dir, image_path))
-            self.img_list = np.arange(len(self.data))
+            self.extract()
+            cache_file = self.generate_index()
+            self.img_list = cache_file['img_list']
+            self.label_tensors = cache_file['label_tensors']
+            self.split_inds = cache_file["split_inds"]
             if not (osp.exists(osp.join(self.source_dir, 'val_split.pt'))
                     and osp.exists(osp.join(self.source_dir, 'train_split.pt'))
                     and osp.exists(osp.join(self.source_dir, 'test_split.pt'))):
@@ -41,13 +45,52 @@ class DRIMDBBase(data.Dataset):
 
     def __getitem__(self, item):
         index = self.split_inds[item]
-        img = self.data[index]
-        img = Image.fromarray(img)
-        if not self.to_gray:
-            img = self.transforms(img.convert('RGB'))
+        img_name = self.img_list[index]
+        label = self.label_tensors[index]
+
+        imp = osp.join(self.source_dir, self.image_dir, img_name)
+        with open(imp, 'rb') as f:
+            with Image.open(f) as img:
+                if not self.to_gray:
+                    img = self.transforms(img.convert('RGB'))
+                else:
+                    img = self.transforms(img.convert('L'))
+        return img, label
+
+    def extract(self):
+        if os.path.exists(os.path.join(self.source_dir, self.image_dir)):
+            return
+        from zipfile import ZipFile
+        with ZipFile(os.path.join(self.source_dir, 'cell_images.zip'), 'r') as zipObj:
+            zipObj.extractall(os.path.join(self.source_dir))
+
+    def generate_index(self):
+        """
+        Scan index file to create list of images and labels for each image
+        :return:
+        """
+        img_list = []
+        label_list = []
+        if os.name=="posix":
+            split_char = "/"
         else:
-            img = self.transforms(img.convert('L'))
-        return img, torch.LongTensor([0,])
+            split_char = "\\"
+        dir_level = len(os.path.join(self.source_dir, self.image_dir).split(split_char))
+        for (dirpath, dirnames, filenames) in os.walk(os.path.join(self.source_dir, self.image_dir)):
+            for filename in filenames:
+                if ('.jpg' in filename) or ('.png' in filename):
+                    dir_strs = dirpath.split(split_char)[dir_level:]
+                    if len(dir_strs) > 0:
+                        dir_strs = osp.join(*dir_strs)
+                        img_list.append(os.path.join(dir_strs, filename))
+                    else:
+                        img_list.append(filename)
+                    label_list.append(1)
+
+        label_tensors = torch.LongTensor(label_list)
+        return {'img_list': img_list, 'label_tensors': label_tensors, 'label_list': label_list,
+                    'split_inds': torch.arange(len(img_list))
+                    }
 
     def generate_split(self):
         n_total = len(self.img_list)
@@ -62,18 +105,18 @@ class DRIMDBBase(data.Dataset):
         torch.save(test_inds, osp.join(self.index_cache_path, "test_split.pt"))
         return
 
-class DRIMDB(AbstractDomainInterface):
+class Malaria(AbstractDomainInterface):
 
-    dataset_path = "DRIMDB"
-    def __init__(self, root_path="./workspace/datasets/DRIMDB", downsample=None, shrink_channels=False, test_length=None, download=False,
+    dataset_path = "malaria"
+    def __init__(self, root_path="./workspace/datasets/malaria", downsample=None, shrink_channels=False, test_length=None, download=False,
                  extract=True, doubledownsample=None):
         """
         :param leave_out_classes: if a sample has ANY class from this list as positive, then it is removed from indices.
         :param keep_in_classes: when specified, if a sample has None of the class from this list as positive, then it
          is removed from indices..
         """
-        self.name = "DRIMDB"
-        super(DRIMDB, self).__init__()
+        self.name = "Malaria"
+        super(Malaria, self).__init__()
         self.downsample = downsample
         self.shrink_channels=shrink_channels
         self.max_l = test_length
@@ -101,11 +144,11 @@ class DRIMDB(AbstractDomainInterface):
                                              ])
             self.image_size = (224, 224)
 
-        self.ds_train = DRIMDBBase(cache_path, source_path, "train", transforms=transform,
+        self.ds_train = MalariaBase(cache_path, source_path, "train", transforms=transform,
                                      to_gray=shrink_channels, download=download, extract=extract)
-        self.ds_valid = DRIMDBBase(cache_path, source_path, "val", transforms=transform,
+        self.ds_valid = MalariaBase(cache_path, source_path, "val", transforms=transform,
                                 to_gray=shrink_channels, download=download, extract=extract)
-        self.ds_test = DRIMDBBase(cache_path, source_path, "test", transforms=transform,
+        self.ds_test = MalariaBase(cache_path, source_path, "test", transforms=transform,
                                to_gray=shrink_channels, download=download, extract=extract)
         if extract:
             self.D1_train_ind = self.get_filtered_inds(self.ds_train, shuffle=True)
@@ -116,7 +159,7 @@ class DRIMDB(AbstractDomainInterface):
             self.D2_test_ind = self.get_filtered_inds(self.ds_test)
 
 
-    def get_filtered_inds(self, basedata: DRIMDBBase, shuffle=False, max_l=None):
+    def get_filtered_inds(self, basedata: MalariaBase, shuffle=False, max_l=None):
         output_inds = torch.arange(0, len(basedata)).int()
         if shuffle:
             output_inds = output_inds[torch.randperm(len(output_inds))]
@@ -164,12 +207,13 @@ class DRIMDB(AbstractDomainInterface):
                                        ])
 
 if __name__ == "__main__":
-    dataset = DRIMDB()
-    d1_train = dataset.get_D2_valid()
-    print(len(d1_train))
-    loader = data.DataLoader(d1_train, batch_size=1, shuffle=True)
+    #data1 = RIGA("workspace\\datasets\\RIGA-dataset")
+    data1 = Malaria()
+    d1 = data1.get_D1_train()
     import matplotlib.pyplot as plt
-    for batch, batch_ind in zip(loader, range(10)):
-        print(batch_ind)
-        x, y = batch
-        plt.imshow(x[0].numpy().transpose((1,2,0)))
+    print(len(d1))
+    for i in range(10):
+        x, y = d1[i]
+        plt.imshow(x.numpy().transpose((1, 2, 0)))
+
+

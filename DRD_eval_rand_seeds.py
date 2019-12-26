@@ -12,7 +12,7 @@ with warnings.catch_warnings():
 from utils.args import args
 import global_vars as Global
 
-from datasets.PCAM import PCAM, PCAMResize
+from datasets.DRD import DRD
 import matplotlib as mpl
 mpl.rcParams['text.antialiased']=False
 import matplotlib.pyplot as plt
@@ -107,10 +107,10 @@ if __name__ == '__main__':
         'alivaemseaeknn/8', 'alivaebceaeknn/8', 'alimseaeknn/8', 'alibceaeknn/8',
     ]
 
-    D1 = PCAM(root_path=os.path.join(args.root_path, 'pcam'), downsample=224)
-    D164 = PCAMResize(D1, 64)
+    D1 = DRD(root_path=os.path.join(args.root_path, 'diabetic-retinopathy-detection'), downsample=224)
+    D164 = DRD(root_path=os.path.join(args.root_path, "diabetic-retinopathy-detection"),downsample=64)
 
-    args.D1 = 'pcam'
+    args.D1 = 'DRD'
 
     All_ODs = [
          'UniformNoise',
@@ -122,7 +122,7 @@ if __name__ == '__main__':
          'CIFAR10',
          'STL10',
          'TinyImagenet',
-         'Malaria',
+        # 'Malaria',
         # 'MURAWRIST',
         # 'MURAELBOW',
         # 'MURAFINGER',
@@ -162,36 +162,35 @@ if __name__ == '__main__':
     for method in methods:
         print("current method", method)
         mt = Global.get_method(method, args)
-        if not all([has_done_before(method, 'pcam', composite_D2.name, d3) for d3 in d3s]):
+        if not all([has_done_before(method, 'DRD', composite_D2.name, d3) for d3 in d3s]):
             args.D2 = composite_D2.name
             trainval_acc = train_subroutine(mt, D1, composite_D2)
             for d3, D3 in zip(d3s,D3s):
-                if not has_done_before(method, 'pcam', composite_D2.name, d3):
-                    print("Evaluating: ", method, 'pcam', composite_D2.name, d3)
+                if not has_done_before(method, 'DRD', composite_D2.name, d3):
+                    print("Evaluating: ", method, 'DRD', composite_D2.name, d3)
                     test_results = eval_subroutine(mt, D1, D3)
-                    results['results'].append([method, 'pcam', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                    results['results'].append([method, 'DRD', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
 
     for method in methods_64:
         print("current method", method)
         mt = Global.get_method(method, args)
 
-        if not all([has_done_before(method, 'pcam', composite_D2.name, d3) for d3 in d3s]):
+        if not all([has_done_before(method, 'DRD', composite_D2.name, d3) for d3 in d3s]):
             args.D2 = composite_D2.name
             trainval_acc = train_subroutine(mt, D164, composite_D2)
             for d3, D3 in zip(d3s, D3s):
-                if not has_done_before(method, 'pcam', composite_D2.name, d3):
-                    print("Evaluating: ", method, 'pcam', composite_D2.name, d3)
+                if not has_done_before(method, 'DRD', composite_D2.name, d3):
+                    print("Evaluating: ", method, 'DRD', composite_D2.name, d3)
                     test_results = eval_subroutine(mt, D164, D3)
                     results['results'].append(
-                        [method, 'pcam', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(
+                        [method, 'DRD', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(
                             test_results))
                     torch.save(results, results_path)
 
     # usecase 2
 
-    d3s = ["IDC",
-            "ANHIR",
+    d3s = ["DRIMDB",
            ]
     D3s = []
     for d3 in d3s:
@@ -208,15 +207,15 @@ if __name__ == '__main__':
             args.D2 = d2
             mt = Global.get_method(method, args)
 
-            if not all([has_done_before(method, 'pcam', d2, d3) for d3 in d3s]):
+            if not all([has_done_before(method, 'DRD', d2, d3) for d3 in d3s]):
                 trainval_acc = train_subroutine(mt, D1, D2)
             for d3, D3 in zip(d3s,D3s):
                 #if d2 == d3:
                 #    continue
-                if not has_done_before(method, 'pcam', d2, d3):
-                    print("Evaluating: ", method, 'pcam', d2, d3)
+                if not has_done_before(method, 'DRD', d2, d3):
+                    print("Evaluating: ", method, 'DRD', d2, d3)
                     test_results = eval_subroutine(mt, D1, D3)
-                    results['results'].append([method, 'pcam', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                    results['results'].append([method, 'DRD', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
 
     for method in methods_64:
@@ -224,77 +223,65 @@ if __name__ == '__main__':
         for d2, D2 in zip(d3s, D3s):
             args.D2 = d2
             mt = Global.get_method(method, args)
-            if not all([has_done_before(method, 'pcam', d2, d3) for d3 in d3s]):
+            if not all([has_done_before(method, 'DRD', d2, d3) for d3 in d3s]):
                 trainval_acc = train_subroutine(mt, D164, D2)
             for d3, D3 in zip(d3s,D3s):
                 #if d2 == d3:
                 #    continue
-                if not has_done_before(method, 'pcam', d2, d3):
-                    print("Evaluating: ", method, 'pcam', d2, d3)
+                if not has_done_before(method, 'DRD', d2, d3):
+                    print("Evaluating: ", method, 'DRD', d2, d3)
                     test_results = eval_subroutine(mt, D164, D3)
                     results['results'].append(
-                        [method, 'pcam', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                        [method, 'DRD', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
-    '''
+
     # Usecase 3 Evaluation
 
-    d3_tags = ['nodule', 'cardiomegaly', 'pneumothorax', 'mass']
+    d3s = ["RIGA",
+           ]
+    D3s = []
+    for d3 in d3s:
+        dataset = Global.all_datasets[d3]
+        if 'dataset_path' in dataset.__dict__:
+            print(os.path.join(args.root_path, dataset.dataset_path))
+            D3s.append(dataset(root_path=os.path.join(args.root_path, dataset.dataset_path)))
+        else:
+            D3s.append(dataset())
 
-    args.D2 = 'PADChest'
     for method in methods:
         print("current method", method)
-        for d2 in d3_tags:
-            if not has_done_before(method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test'):
-                mt = Global.get_method(method, args)
+        for d2, D2 in zip(d3s, D3s):
+            args.D2 = d2
+            mt = Global.get_method(method, args)
 
-                d3s = d3_tags.copy()
-                d3s.remove(d2)
-
-                D2 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
-                                keep_in_classes=[d2,])
-                D3 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
-                                keep_in_classes=d3s)
-                d2v = D2.get_D2_valid(D1)
-                d3v = D3.get_D2_valid(D1)
-                d2t = D2.get_D2_test(D1)
-                d3t = D2.get_D2_test(D1)
-                print(len(d2v), len(d2t), len(d3v), len(d3t))
-                if min(len(d2v), len(d2t), len(d3v), len(d3t)) < 10:
-                    print("warn")
-                    D2 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
-                                    keep_in_classes=[d2, ])
-                try:
-                    trainval_acc = train_subroutine(mt, D1, D2)
-                except ValueError:
-                    print("wait")
-                print("Evaluating: ", method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test')
-                test_results = eval_subroutine(mt, D1, D3)
-                results['results'].append([method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test', mt.method_identifier(), trainval_acc]
-                                            + list(test_results))
-
-                torch.save(results, results_path)
+            if not all([has_done_before(method, 'DRD', d2, d3) for d3 in d3s]):
+                trainval_acc = train_subroutine(mt, D1, D2)
+            for d3, D3 in zip(d3s, D3s):
+                # if d2 == d3:
+                #    continue
+                if not has_done_before(method, 'DRD', d2, d3):
+                    print("Evaluating: ", method, 'DRD', d2, d3)
+                    test_results = eval_subroutine(mt, D1, D3)
+                    results['results'].append(
+                        [method, 'DRD', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                    torch.save(results, results_path)
 
     for method in methods_64:
         print("current method", method)
-        for d2 in d3_tags:
-            if not has_done_before(method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test'):
-                mt = Global.get_method(method, args)
-
-                d3s = d3_tags.copy().remove(d2)
-
-                D2 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
-                                keep_in_classes=[d2, ], downsample=64)
-                D3 = PADChestSV(root_path=os.path.join(args.root_path, 'PADChest'), binary=True, test_length=5000,
-                                keep_in_classes=d3s, downsample=64)
-
+        for d2, D2 in zip(d3s, D3s):
+            args.D2 = d2
+            mt = Global.get_method(method, args)
+            if not all([has_done_before(method, 'DRD', d2, d3) for d3 in d3s]):
                 trainval_acc = train_subroutine(mt, D164, D2)
-                print("Evaluating: ", method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test')
-                test_results = eval_subroutine(mt, D164, D3)
-                results['results'].append(
-                    [method, 'PADChestL', 'PADChestL_' + d2, 'PADChestL_test', mt.method_identifier(), trainval_acc]
-                    + list(test_results))
+            for d3, D3 in zip(d3s, D3s):
+                # if d2 == d3:
+                #    continue
+                if not has_done_before(method, 'DRD', d2, d3):
+                    print("Evaluating: ", method, 'DRD', d2, d3)
+                    test_results = eval_subroutine(mt, D164, D3)
+                    results['results'].append(
+                        [method, 'DRD', d2, d3, mt.method_identifier(), trainval_acc] + list(test_results))
+                    torch.save(results, results_path)
 
-                torch.save(results, results_path)
-    '''
     for i, (m, ds, dm, dt, mi, a_train, a_test, auc_test, AP_test, ROC, PRC, fpr, tpr, precision, recall, TP, TN, FP, FN) in enumerate(results['results']):
         print ('%d\t%s\t%15s\t%-15s\t%.2f%% / %.2f%% - %.2f%%'%(i, m, '%s-%s'%(ds, dm), dt, a_train*100, a_test*100, auc_test*100))

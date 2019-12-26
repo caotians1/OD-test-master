@@ -181,12 +181,12 @@ class RIGA(AbstractDomainInterface):
         return SubDataset(self.name, self.ds_test, self.D1_test_ind, label=0)
 
     def get_D2_valid(self, D1):
-        assert self.is_compatible(D1)
+        #assert self.is_compatible(D1)
         target_indices = self.D2_valid_ind
         return SubDataset(self.name, self.ds_train, target_indices, label=1, transform=D1.conformity_transform())
 
     def get_D2_test(self, D1):
-        assert self.is_compatible(D1)
+        #assert self.is_compatible(D1)
         target_indices = self.D2_test_ind
         return SubDataset(self.name, self.ds_test, target_indices, label=1, transform=D1.conformity_transform())
 

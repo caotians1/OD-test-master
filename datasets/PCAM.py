@@ -163,6 +163,66 @@ class PCAM(AbstractDomainInterface):
                                        ])
 
 
+class PCAMResize(AbstractDomainInterface):
+    def __init__(self, source_data, downsample):
+        super(PCAMResize, self).__init__()
+        self.name = source_data.name
+        if source_data.shrink_channels:
+            transform_list = [ExpandRGBChannels(),
+                              transforms.ToPILImage(),
+                              transforms.Grayscale(),
+                              transforms.Resize((downsample, downsample)),
+                              transforms.ToTensor(),
+                              ]
+        else:
+            transform_list = [ExpandRGBChannels(),
+                              transforms.ToPILImage(),
+                              transforms.Resize((downsample, downsample)),
+                              transforms.ToTensor(),]
+
+
+        self.transform = transforms.Compose(transform_list)
+        self.image_size = (downsample, downsample)
+        self.source_data = source_data
+
+    def get_D1_train(self):
+        return SubDataset(self.name, self.source_data.ds_train, self.source_data.D1_train_ind, transform=self.transform)
+
+    def get_D1_valid(self):
+        return SubDataset(self.name, self.source_data.ds_valid, self.source_data.D1_valid_ind, label=0, transform=self.transform)
+
+    def get_D1_test(self):
+        return SubDataset(self.name, self.source_data.ds_test, self.source_data.D1_test_ind, label=0, transform=self.transform)
+
+    def get_D2_valid(self, D1):
+        assert self.is_compatible(D1)
+        target_indices = self.source_data.D2_valid_ind
+        return SubDataset(self.name, self.source_data.ds_train, target_indices, label=1, transform=D1.conformity_transform())
+
+    def get_D2_test(self, D1):
+        assert self.is_compatible(D1)
+        target_indices = self.source_data.D2_test_ind
+        return SubDataset(self.name, self.source_data.ds_test, target_indices, label=1, transform=D1.conformity_transform())
+
+    def conformity_transform(self):
+        target = self.image_size[0]
+        if self.source_data.shrink_channels:
+            return transforms.Compose([ExpandRGBChannels(),
+                                       transforms.ToPILImage(),
+                                       transforms.Grayscale(),
+                                       transforms.Resize((target, target)),
+                                       transforms.ToTensor()
+                                       ])
+        else:
+            return transforms.Compose([
+                                       ExpandRGBChannels(),
+                                       transforms.ToPILImage(),
+                                       transforms.Resize((target, target)),
+                                       transforms.ToTensor(),
+                                       ])
+
+
+
 class PCAMGray(PCAM):
     dataset_path = "pcam"
     def __init__(self, root_path="./workspace/datasets/pcam", downsample=None, shrink_channels=False, test_length=None,
@@ -181,5 +241,5 @@ if __name__ == "__main__":
     print(len(d1))
     for i in range(10):
         x, y = d1[i]
-        x2 = x * 0.229 + 0.485
-        plt.imshow(x2.numpy().transpose((1, 2, 0)))
+        #x2 = x * 0.229 + 0.485
+        plt.imshow(x.numpy().transpose((1, 2, 0)))

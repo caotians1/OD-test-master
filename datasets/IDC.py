@@ -197,5 +197,5 @@ class IDC(AbstractDomainInterface):
                                        transforms.ToPILImage(),
                                        transforms.Resize((target, target)),
                                        transforms.ToTensor(),
-                                       transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
+                                       #transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
                                        ])
