@@ -265,8 +265,12 @@ class OpenMax(ProbabilityThreshold):
             trainX, trainY = get_cached(model, train_loader, self.args.device)
             validX, validY = get_cached(model, valid_loader, self.args.device)
 
-            new_train_ds = TensorDataset(trainX, trainY)
-            new_valid_ds = TensorDataset(validX, validY)
+            trainX_notnan = trainX[torch.logical_not(torch.isnan(trainX)[:, 0]).nonzero().squeeze(1)]
+            trainY_notnan = trainY[torch.logical_not(torch.isnan(trainX)[:, 0]).nonzero().squeeze(1)]
+            validX_notnan = validX[torch.logical_not(torch.isnan(validX)[:, 0]).nonzero().squeeze(1)]
+            validY_notnan = validY[torch.logical_not(torch.isnan(validX)[:, 0]).nonzero().squeeze(1)]
+            new_train_ds = TensorDataset(trainX_notnan, trainY_notnan)
+            new_valid_ds = TensorDataset(validX_notnan, validY_notnan)
 
             # Initialize the new multi-threaded loaders.
             train_loader = DataLoader(new_train_ds, batch_size=2048, shuffle=True, num_workers=0, pin_memory=False)
@@ -296,7 +300,7 @@ class OpenMax(ProbabilityThreshold):
         config.stochastic_gradient = True
         config.visualize = not self.args.no_visualize  
         config.model = model
-        config.optim = optim.Adagrad(model.H.parameters(), lr=1e-1, weight_decay=1.0/len(train_ds))
+        config.optim = optim.SGD(model.H.parameters(), lr=1e-2, weight_decay=0.0)#1.0/len(train_ds))
         config.scheduler = optim.lr_scheduler.ReduceLROnPlateau(config.optim, patience=10, threshold=1e-1, min_lr=1e-8, factor=0.1, verbose=True)
         h_path = path.join(self.args.experiment_path, '%s' % (self.__class__.__name__),
                            '%d' % (self.default_model),

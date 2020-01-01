@@ -324,11 +324,17 @@ class ProbabilityThreshold(AbstractMethodInterface):
         target = np.concatenate(y_aggregate, axis=-1)
         prediction = np.concatenate(pred_aggregate, axis=-1)
         classification = np.concatenate(clas_aggregate, axis=-1)
+        prediction = prediction[(~np.isnan(prediction)).nonzero()]
+        target = target[(~np.isnan(prediction)).nonzero()]
+        classification = classification[(~np.isnan(prediction)).nonzero()]
         TP = np.sum(np.logical_and(classification == 1, target == 1))
         TN = np.sum(np.logical_and(classification == 0, target == 0))
         FP = np.sum(np.logical_and(classification == 1, target == 0))
         FN = np.sum(np.logical_and(classification == 0, target == 1))
-
+        print("pred mean, max, min")
+        print(prediction.mean(), prediction.max(), prediction.min())
+        print("TP, TN, FP, FN")
+        print(TP, TN, FP, FN)
         fpr, tpr, thresholds = roc_curve(target, prediction)
         precision, recall, pr_thresholds = precision_recall_curve(target, prediction)
         auprc = average_precision_score(target, prediction)
