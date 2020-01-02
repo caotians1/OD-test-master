@@ -30,7 +30,7 @@ for i in {0..10}
             tar -xzf $SLURM_TMPDIR/data/MURA/images_224.tar.gz -C $SLURM_TMPDIR/data/MURA
             tar -xf $SLURM_TMPDIR/data/PADChest/images-64.tar -C $SLURM_TMPDIR/data/PADChest
             tar -xzf $SLURM_TMPDIR/data/PADChest/images-299.tar.gz -C $SLURM_TMPDIR/data/PADChest
-            tar -xzf $SLURM_TMPDIR/data/RIGA-dataset/images-224.tar.gz -C $SLURM_TMPDIR/data/RIGA-dataset
+            tar -xzf $SLURM_TMPDIR/data/RIGA-dataset/images_224.tar.gz -C $SLURM_TMPDIR/data/RIGA-dataset
             tar -xzf $SLURM_TMPDIR/data/diabetic-retinopathy-detection/images_224.tar.gz -C $SLURM_TMPDIR/data/diabetic-retinopathy-detection
 
             source $SLURM_TMPDIR/env/temp/bin/activate
