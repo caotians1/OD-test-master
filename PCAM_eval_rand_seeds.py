@@ -83,8 +83,8 @@ if __name__ == '__main__':
     results_path = os.path.join(args.experiment_path, 'results.pth')
     results = init_and_load_results(results_path, args)
     methods = [
-               'prob_threshold/0',  #'prob_threshold/1',
-               'score_svm/0',          #'score_svm/1',
+               #'prob_threshold/0',  #'prob_threshold/1',
+               #'score_svm/0',          #'score_svm/1',
                #'openmax/0',            #'openmax/1',
                'binclass/0',           #'binclass/1',
                'odin/0',              # 'odin/1',
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     D1 = PCAM(root_path=os.path.join(args.root_path, 'pcam'), downsample=224)
     D164 = PCAMResize(D1, 64)
 
-    args.D1 = 'pcam'
+    args.D1 = 'PCAM'
 
     All_ODs = [
          'UniformNoise',
