@@ -85,7 +85,7 @@ if __name__ == '__main__':
     methods = [
                'prob_threshold/0',  #'prob_threshold/1',
                'score_svm/0',          #'score_svm/1',
-               'openmax/0',            #'openmax/1',
+               #'openmax/0',            #'openmax/1',
                'binclass/0',           #'binclass/1',
                'odin/0',              # 'odin/1',
                "Maha",
