@@ -251,6 +251,15 @@ if __name__ == "__main__":
         X_embedded = tsne.fit_transform(ALL_EMBS)
 
         X_embedded = X_embedded[rand_inds]
+
+        np.save(
+            os.path.join(args.experiment_path, "embedded_UC%i_ppd_%d_d1_%s.npy" % (uc_tag, args.points_per_d2, args.dataset)),
+            X_embedded)
+        np.save(
+            os.path.join(args.experiment_path,
+                         "selectedY_UC%i_ppd_%d_d1_%s.npy" % (uc_tag, args.points_per_d2, args.dataset)),
+            ALL_Y)
+
         fig, ax = plt.subplots()
         for k, cla in Cat2Y.items():
             target_inds = np.nonzero(ALL_Y == cla)

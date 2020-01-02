@@ -2,7 +2,7 @@ import numpy as np
 import csv, os
 import torch
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import argparse
 import _pickle
