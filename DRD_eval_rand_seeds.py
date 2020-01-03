@@ -85,7 +85,7 @@ if __name__ == '__main__':
     methods = [
                'prob_threshold/0',  #'prob_threshold/1',
                'score_svm/0',          #'score_svm/1',
-               'openmax/0',            #'openmax/1',
+               #'openmax/0',            #'openmax/1',
                'binclass/0',           #'binclass/1',
                'odin/0',              # 'odin/1',
                "Maha",
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         ]
     methods_64 = [
           'reconst_thresh/0', 'reconst_thresh/1',   'reconst_thresh/2', 'reconst_thresh/3',
-         'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
+         #'reconst_thresh/4', 'reconst_thresh/5', 'reconst_thresh/6', 'reconst_thresh/7',
         #'reconst_thresh/8', 'reconst_thresh/9', 'reconst_thresh/10','reconst_thresh/11',
         #'reconst_thresh/12', 'reconst_thresh/13',
          #'ALI_reconst/0', #'ALI_reconst/1', #'ALI_reconst/0',
@@ -103,8 +103,8 @@ if __name__ == '__main__':
          'knn/1', 'knn/2', 'knn/4', 'knn/8',
           'vaemseaeknn/1','vaebceaeknn/1', 'mseaeknn/1', 'bceaeknn/1',
           'vaemseaeknn/8','vaebceaeknn/8', 'mseaeknn/8',  'bceaeknn/8',
-        'alivaemseaeknn/1', 'alivaebceaeknn/1', 'alimseaeknn/1', 'alibceaeknn/1',
-        'alivaemseaeknn/8', 'alivaebceaeknn/8', 'alimseaeknn/8', 'alibceaeknn/8',
+        #'alivaemseaeknn/1', 'alivaebceaeknn/1', 'alimseaeknn/1', 'alibceaeknn/1',
+        #'alivaemseaeknn/8', 'alivaebceaeknn/8', 'alimseaeknn/8', 'alibceaeknn/8',
     ]
 
     D1 = DRD(root_path=os.path.join(args.root_path, 'diabetic-retinopathy-detection'), downsample=224)
