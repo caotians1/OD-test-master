@@ -16,6 +16,7 @@ from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve, av
 from methods import AbstractMethodInterface, AbstractModelWrapper, SVMLoss
 from datasets import MirroredDataset
 import global_vars as Global
+import time
 
 class PTModelWrapper(AbstractModelWrapper):
     """ The wrapper class for H.
@@ -289,17 +290,20 @@ class ProbabilityThreshold(AbstractMethodInterface):
         pred_aggregate = []
         clas_aggregate = []
         y_aggregate = []
+        times = []
         with tqdm(total=len(dataset), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
             for i, (image, label) in enumerate(dataset):
                 pbar.update()
 
                 # Get and prepare data.
                 input, target = image.to(self.args.device), label.to(self.args.device)
-
+                ts = time.time()
                 prediction = self.H_class(input)
                 pred_aggregate.append(prediction.data.cpu().view(-1).numpy())
                 y_aggregate.append(target.data.cpu().numpy())
                 classification = self.H_class.classify(prediction)
+                te = time.time()
+                times.append((te-ts)/target.shape[0])
                 clas_aggregate.append(classification.data.cpu().view(-1).numpy())
                 #roc = roc_auc_score(target.data.cpu().numpy(), prediction.data.cpu().view(-1).numpy(), average="micro")
                 #weighted_AUROC += roc * len(input)
@@ -331,6 +335,7 @@ class ProbabilityThreshold(AbstractMethodInterface):
         TN = np.sum(np.logical_and(classification == 0, target == 0))
         FP = np.sum(np.logical_and(classification == 1, target == 0))
         FN = np.sum(np.logical_and(classification == 0, target == 1))
+        per_sample_time = np.mean(np.array(times))
         print("pred mean, max, min")
         print(prediction.mean(), prediction.max(), prediction.min())
         print("TP, TN, FP, FN")
@@ -340,4 +345,4 @@ class ProbabilityThreshold(AbstractMethodInterface):
         auprc = average_precision_score(target, prediction)
         auroc = roc_auc_score(target, prediction)
         print("Final Test average accuracy %s, AUROC %s, AP %s"%(colored('%.4f%%'%(test_average_acc*100),'red'), colored('%.4f%%'%(auroc*100),'green'), colored('%.4f%%'%(auprc*100),'blue')))
-        return test_average_acc.item(), auroc, auprc, fpr, tpr, precision, recall, TP, TN, FP, FN
+        return test_average_acc.item(), auroc, auprc, fpr, tpr, precision, recall, TP, TN, FP, FN, per_sample_time
