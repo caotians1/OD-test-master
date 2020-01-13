@@ -89,13 +89,16 @@ if __name__ == '__main__':
                'binclass/0',           #'binclass/1',
                #'odin/0',              # 'odin/1',
                #"Maha",
-               #"Maha1layer",
+               "Maha1layer",
                #"svknn",
 
         ]
-
+    methods_64 = [
+        'knn/1', 'knn/8',
+    ]
 
     D1 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'))
+    D164 = NIHChestBinaryTrainSplit(root_path=os.path.join(args.root_path, 'NIHCC'), downsample=64)
     args.D1 = 'NIHCC'
 
     All_ODs = [
@@ -158,6 +161,21 @@ if __name__ == '__main__':
                     results['results'].append([method, 'NIHCC', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(test_results))
                     torch.save(results, results_path)
 
+    for method in methods_64:
+        print("current method", method)
+        mt = Global.get_method(method, args)
+
+        if not all([has_done_before(method, 'NIHCC', composite_D2.name, d3) for d3 in d3s]):
+            args.D2 = composite_D2.name
+            trainval_acc = train_subroutine(mt, D164, composite_D2)
+            for d3, D3 in zip(d3s, D3s):
+                if not has_done_before(method, 'NIHCC', composite_D2.name, d3):
+                    print("Evaluating: ", method, 'NIHCC', composite_D2.name, d3)
+                    test_results = eval_subroutine(mt, D164, D3)
+                    results['results'].append(
+                        [method, 'NIHCC', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(
+                            test_results))
+                    torch.save(results, results_path)
 
     random.shuffle(All_ODs)
 
@@ -196,6 +214,22 @@ if __name__ == '__main__':
                 if not has_done_before(method, 'NIHCC', composite_D2.name, d3):
                     print("Evaluating: ", method, 'NIHCC', composite_D2.name, d3)
                     test_results = eval_subroutine(mt, D1, D3)
+                    results['results'].append(
+                        [method, 'NIHCC', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(
+                            test_results))
+                    torch.save(results, results_path)
+
+    for method in methods_64:
+        print("current method", method)
+        mt = Global.get_method(method, args)
+
+        if not all([has_done_before(method, 'NIHCC', composite_D2.name, d3) for d3 in d3s]):
+            args.D2 = composite_D2.name
+            trainval_acc = train_subroutine(mt, D164, composite_D2)
+            for d3, D3 in zip(d3s, D3s):
+                if not has_done_before(method, 'NIHCC', composite_D2.name, d3):
+                    print("Evaluating: ", method, 'NIHCC', composite_D2.name, d3)
+                    test_results = eval_subroutine(mt, D164, D3)
                     results['results'].append(
                         [method, 'NIHCC', composite_D2.name, d3, mt.method_identifier(), trainval_acc] + list(
                             test_results))

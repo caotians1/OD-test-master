@@ -34,6 +34,6 @@ for i in {0..10}
             python setup_datasets.py
             ln -sf $SLURM_TMPDIR/data workspace/datasets-$SLURM_JOBID
             export DISABLE_TQDM="True"
-            python Chest_eval_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp=Chest_eval_binary_$p1 --seed=$p1 --batch-size=64 --no-visualize --save --workers=8
+            python Chest_eval_binary.py --root_path=workspace/datasets-$SLURM_JOBID --exp=Chest_eval_top4_$p1 --seed=$p1 --batch-size=64 --no-visualize --save --workers=8
          fi
     done
