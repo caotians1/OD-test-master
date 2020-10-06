@@ -152,7 +152,7 @@ class PADChest(AbstractDomainInterface):
 
     def get_filtered_inds(self, basedata: PADChestBase, shuffle=False, max_l=None):
         if not self.keep_in_classes is None:
-            print(basedata.__dict__)
+            #print(basedata.__dict__)
             keep_in_mask_label = torch.zeros(N_CLASS).int()
             for cla in self.keep_in_classes:
                 ii = CLASSES.index(cla)
@@ -291,8 +291,12 @@ class PADChestSVBase(data.Dataset):
         if os.path.exists(os.path.join(self.source_dir, self.image_dir)):
             return
         import tarfile
-        tarsplits_list = ["images-64.tar",
-                            ]
+        if self.image_dir == "images-64":
+            tarsplits_list = ["images-64.tar",
+                                ]
+        else:
+            tarsplits_list = ["images-299.tar.gz",
+                              ]
         for tar_split in tarsplits_list:
             with tarfile.open(os.path.join(self.source_dir, tar_split)) as tar:
                 tar.extractall(os.path.join(self.source_dir, self.image_dir))
@@ -307,7 +311,7 @@ class PADChestSVBase(data.Dataset):
         with open(osp.join(self.source_dir, self.index_file), 'r') as fp:
             csvf = csv.DictReader(fp)
             for row in csvf:
-                if not row['Projection'] == 'PA':
+                if not row['Projection'] == 'L':
                     continue
                 labels = row['Labels'].strip("[]").split(',')
                 labels = [l.strip("\\ '") for l in labels]
@@ -349,19 +353,22 @@ class PADChestSV(AbstractDomainInterface):
             transform_list = [transforms.Resize(doubledownsample),]
         else:
             transform_list = []
+        img_dir = "images-299"
         if downsample is not None:
             print("downsampling to", downsample)
             transform = transforms.Compose(transform_list +[
                                             transforms.Resize((downsample, downsample)),
                                             transforms.ToTensor()])
             self.image_size = (downsample, downsample)
+            if downsample == 64:
+                img_dir = "images-64"
         else:
             transform = transforms.Compose(transform_list +[transforms.Resize((224, 224)),
                                             transforms.ToTensor()])
             self.image_size = (224, 224)
 
         self.ds_all = PADChestSVBase(cache_path, source_path, transforms=transform, binary=self.binary,
-                                   to_rgb=expand_channels, download=download, extract=extract)
+                                   to_rgb=expand_channels, download=download, extract=extract, image_dir=img_dir)
         n_train = int(0.8 * len(self.ds_all))
         n_val = int(0.1 * len(self.ds_all))
         n_test = len(self.ds_all) - n_train - n_val

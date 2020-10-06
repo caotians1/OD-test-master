@@ -4,7 +4,7 @@ import torch
 import torch.utils.data as data
 from torchvision import datasets
 import torchvision.transforms as transforms
-
+import random
 """
  The data must be divided in three ways for Train, Valid, and Test.
  Therefore we implement our own wrapper around the existing datasets
@@ -23,13 +23,14 @@ class SubDataset(data.Dataset):
         When optimizing for threshold, for instance, you don't need to run the underlying network for each input entry.
         Using the index, you can just fetch the cached network output. See the implementation for examples.
     """
-    def __init__(self, name, parent_dataset, indices, label=None, transform=None, cached=False):
+    def __init__(self, name, parent_dataset, indices, label=None, transform=None, cached=False, reshuffle_on_trim=True):
         self.parent_dataset = parent_dataset
         self.name = name
         self.indices = indices
         self.label = label
         self.transform = transform
         self.cached = cached
+        self.reshuffle=reshuffle_on_trim
     
     def __len__(self):
         return self.indices.numel()
@@ -55,6 +56,8 @@ class SubDataset(data.Dataset):
             Trim the dataset by picking the first new_length entries.
         """
         assert self.indices.numel() >= new_length
+        if self.reshuffle:
+            self.indices = self.indices[torch.randperm(len(self.indices))]
         self.indices = self.indices[0:new_length]
 
     def split_dataset(self, p):
@@ -143,7 +146,48 @@ class AbstractDomainInterface(object):
         to this datasets for conformity in evaluation.
     """
     def conformity_transform(self):
-        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))        
+        raise NotImplementedError("%s has no implementation for this function."%(self.__class__.__name__))
+
+    def __add__(self, other):
+        return ADISum(self, other)
+
+class ADISum(AbstractDomainInterface):
+    def __init__(self, src, other):
+        self.src = src
+        self.other = other
+        self.name = src.name + "+" + other.name
+        super(ADISum, self).__init__()
+
+    def get_D1_train(self):
+        d1_train1 = self.src.get_D1_train()
+        d1_train2 = self.other.get_D1_train()
+        return SubDataset(self.name, data.ConcatDataset([d1_train1, d1_train2]), torch.arange(len(d1_train1)+len(d1_train2)).int())
+
+    def get_D1_valid(self):
+        d1_train1 = self.src.get_D1_valid()
+        d1_train2 = self.other.get_D1_valid()
+        return SubDataset(self.name, data.ConcatDataset([d1_train1, d1_train2]), torch.arange(len(d1_train1)+len(d1_train2)).int())
+
+    def get_D1_test(self):
+        d1_train1 = self.src.get_D1_test()
+        d1_train2 = self.other.get_D1_test()
+        return SubDataset(self.name, data.ConcatDataset([d1_train1, d1_train2]), torch.arange(len(d1_train1)+len(d1_train2)).int())
+
+    def get_D2_valid(self, D1):
+        d1_train1 = self.src.get_D2_valid(D1)
+        d1_train2 = self.other.get_D2_valid(D1)
+        return SubDataset(self.name, data.ConcatDataset([d1_train1, d1_train2]), torch.arange(len(d1_train1)+len(d1_train2)).int())
+
+    def get_D2_test(self, D1):
+        d1_train1 = self.src.get_D2_test(D1)
+        d1_train2 = self.other.get_D2_test(D1)
+        return SubDataset(self.name, data.ConcatDataset([d1_train1, d1_train2]), torch.arange(len(d1_train1)+len(d1_train2)).int())
+
+    def is_compatible(self, D1):
+        import warnings
+        warnings.warn("Calling is_compatible on a combined dataset")
+        return True
+
 
 class MirroredDataset(data.Dataset):
     def __init__(self, parent_dataset):

@@ -89,7 +89,7 @@ class AEKNNModel(nn.Module):
         This is our Nearest Neighbour "neural network" with AE latent representations.
     """
 
-    def __init__(self, subnetwork, base_data, k=1):
+    def __init__(self, subnetwork, base_data, k=1, SV=False):
         super(AEKNNModel, self).__init__()
         self.base_data = base_data.cuda()
         n_data = self.base_data.size(0)
@@ -98,11 +98,17 @@ class AEKNNModel(nn.Module):
         self.K = k
         self.norm = 2
         self.subnetwork = subnetwork
+        self.SV = SV
     
     def forward(self, x, **kwargs):
         n_samples = x.size(0)
         self.subnetwork.eval()
-        x = self.subnetwork.encode(x).data
+        if not self.SV:
+            x = self.subnetwork.encode(x).data
+            if len(x.shape) == 4:
+                x = x.squeeze(-1).squeeze(-1)
+        else:
+            x = self.subnetwork.partial_forward(x).data
         base_data = self.base_data
         base_norm = self.base_data_norm
         ref_size = base_data.size(0)
@@ -152,6 +158,27 @@ class AEKNNSVM(ScoreSVM):
             else:
                 base_model.netid = "MSE." + base_model.netid
             home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
+        elif isinstance(self, ALIBCEKNNSVM) or isinstance(self, ALIMSEKNNSVM):
+            base_model = Global.get_ref_autoencoder(dataset.name)[1]().to(self.args.device)
+            if isinstance(self, ALIBCEKNNSVM):
+                base_model.netid = "BCE." + base_model.netid
+            else:
+                base_model.netid = "MSE." + base_model.netid
+            home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
+        elif isinstance(self, ALIVAEBCEKNNSVM)or isinstance(self, ALIVAEMSEKNNSVM):
+            base_model = Global.get_ref_vae(dataset.name)[1]().to(self.args.device)
+            if isinstance(self, ALIVAEBCEKNNSVM):
+                base_model.netid = "BCE." + base_model.netid
+            else:
+                base_model.netid = "MSE." + base_model.netid
+            home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
+        elif isinstance(self, ALIKNNSVM):
+            base_model = Global.get_ref_ali(dataset.name)[0]().to(self.args.device)
+            if isinstance(self, ALIKNNSVM):
+                base_model.netid = "BCE." + base_model.netid
+            else:
+                base_model.netid = "MSE." + base_model.netid
+            home_path = Models.get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name, suffix_str=base_model.netid)
         else:
             raise NotImplementedError()
 
@@ -180,11 +207,66 @@ class AEKNNSVM(ScoreSVM):
                 for i, (x, _) in enumerate(all_loader):
                     n_data = x.size(0)
                     output = base_model.encode(x.to(self.args.device)).data
+                    if len(output.shape) == 4:
+                        output = output.squeeze()
                     self.base_data[base_ind:base_ind+n_data].copy_(output)
                     base_ind = base_ind + n_data
                     pbar.update()
         # self.base_data = torch.cat([x.view(1, -1) for x,_ in dataset])
         self.base_model = AEKNNModel(base_model, self.base_data, k=self.default_model).to(self.args.device)
+        self.base_model.eval()
+
+class SVKNNSVM(ScoreSVM):
+    def __init__(self, args):
+        super(SVKNNSVM, self).__init__(args)
+        self.base_data = None
+        self.default_model = 1
+
+    def method_identifier(self):
+        output = "SVKNNSVM/%d"%self.default_model
+        return output
+
+    def propose_H(self, dataset):
+        assert self.default_model > 0, 'KNN needs K>0'
+        if self.base_model is not None:
+            self.base_model.base_data = None
+            self.base_model = None
+
+        # Set up the base0-model
+        base_model = Global.get_ref_classifier(dataset.name)[0]().to(self.args.device)
+        from models import get_ref_model_path
+        home_path = get_ref_model_path(self.args, base_model.__class__.__name__, dataset.name)
+
+        hbest_path = path.join(home_path, 'model.best.pth')
+        best_h_path = hbest_path
+        print(colored('Loading H1 model from %s'%best_h_path, 'red'))
+        base_model.load_state_dict(torch.load(best_h_path))
+        base_model.eval()
+
+        if dataset.name in Global.mirror_augment:
+            print(colored("Mirror augmenting %s"%dataset.name, 'green'))
+            new_train_ds = dataset + MirroredDataset(dataset)
+            dataset = new_train_ds
+
+        # Initialize the multi-threaded loaders.
+        all_loader   = DataLoader(dataset,  batch_size=self.args.batch_size, num_workers=1, pin_memory=True)
+
+        n_data = len(dataset)
+        n_dim  = base_model.partial_forward(dataset[0][0].to(self.args.device).unsqueeze(0)).numel()
+        print('nHidden %d'%(n_dim))
+        self.base_data = torch.zeros(n_data, n_dim, dtype=torch.float32)
+        base_ind = 0
+        with torch.set_grad_enabled(False):
+            with tqdm(total=len(all_loader), disable=bool(os.environ.get("DISABLE_TQDM", False))) as pbar:
+                pbar.set_description('Caching X_train for %d-nn'%self.default_model)
+                for i, (x, _) in enumerate(all_loader):
+                    n_data = x.size(0)
+                    output = base_model.partial_forward(x.to(self.args.device)).data
+                    self.base_data[base_ind:base_ind+n_data].copy_(output)
+                    base_ind = base_ind + n_data
+                    pbar.update()
+        # self.base_data = torch.cat([x.view(1, -1) for x,_ in dataset])
+        self.base_model = AEKNNModel(base_model, self.base_data, k=self.default_model, SV=True).to(self.args.device)
         self.base_model.eval()
 
 """
@@ -205,4 +287,25 @@ class VAEMSEKNNSVM(AEKNNSVM):
 class VAEBCEKNNSVM(AEKNNSVM):
     def method_identifier(self):
         output = "VAEBCEKNNSVM/%d"%self.default_model
+        return output
+class ALIBCEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIBCEKNNSVM/%d"%self.default_model
+        return output
+class ALIMSEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIMSEKNNSVM/%d"%self.default_model
+        return output
+class ALIVAEMSEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIVAEMSEKNNSVM/%d"%self.default_model
+        return output
+class ALIVAEBCEKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIVAEBCEKNNSVM/%d"%self.default_model
+        return output
+
+class ALIKNNSVM(AEKNNSVM):
+    def method_identifier(self):
+        output = "ALIKNNSVM/%d"%self.default_model
         return output

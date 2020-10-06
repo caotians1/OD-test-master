@@ -168,6 +168,12 @@ all_methods = {
     'mseaeknn':         KNN.MSEKNNSVM,
     'vaebceaeknn':         KNN.VAEBCEKNNSVM,
     'vaemseaeknn':         KNN.VAEMSEKNNSVM,
+    'alibceaeknn':         KNN.ALIBCEKNNSVM,
+    'alimseaeknn':         KNN.ALIMSEKNNSVM,
+    'alivaebceaeknn':         KNN.ALIVAEBCEKNNSVM,
+    'alivaemseaeknn':         KNN.ALIVAEMSEKNNSVM,
+    'aliknnsvm':           KNN.ALIKNNSVM,
+    'svknn':            KNN.SVKNNSVM,
     'binclass':         BinClass.BinaryClassifier,
     'deep_ensemble':    DE.DeepEnsemble,
     'odin':             ODIN.ODIN,
@@ -175,7 +181,8 @@ all_methods = {
     'pixelcnn':         PCNN.PixelCNN,
     'openmax':          OM.OpenMax,
     'ALI_reconst':      ALI.ALIReconstruction,
-    'Maha':             MAHA.MahalanobisDetector
+    'Maha':             MAHA.MahalanobisDetector,
+    'Maha1layer':       MAHA.MahalanobisDetectorOneLayer,
 }
 
 ##################################################################
